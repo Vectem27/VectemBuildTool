@@ -1,0 +1,14 @@
+# Generated
+.cache/
+**/Build/
+**/build/
+ThirdParty/lua-*/lib
+
+bin/Toolchains/linux/build/
+bin/Toolchains/linux/*.exe
+bin/Toolchains/linux/VectemBuildTool
+
+# Configuration
+.vscode/
+ClangWorkingCommand.sh
+Test/TestCommands.txt
