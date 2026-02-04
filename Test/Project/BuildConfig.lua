@@ -96,7 +96,7 @@ UnitsConfig = UnitsConfigSet({
         BuildDir = "Build",
         TargetsDir = "Targets",
         SubUnitsDir = {
-            {Dir = "Plugins", Unit = {"Plugin"}, bRecursive=true}
+            {Dir = "Plugins", UnitType = {"Plugin"}, bRecursive=true}
         }
     },
     Plugin = {

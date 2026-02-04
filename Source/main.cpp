@@ -15,6 +15,8 @@
 
 #include <sol/sol.hpp>
 
+#include <CLI/CLI11.hpp>
+
 namespace fs = std::filesystem;
 
 /**
@@ -23,18 +25,45 @@ namespace fs = std::filesystem;
  */
 int main(int argc, char* argv[])
 {
+    CLI::App app{"Vectem Build Engine"};
+
+    std::string fichier;
+    bool verbose = false;
+
+
+    std::string unitName;
+    fs::path unitRoot;
+
+    fs::path confFile;
+    fs::path targetFile;
+
+    app.add_option("unit-name", unitName, "Unit name")
+       ->required();
+
+    app.add_option("unit-root-path", unitRoot, "Unit root path")
+       ->required()
+       ->check(CLI::ExistingPath);
+
+    app.add_option("build-config-path", confFile, "Build config file path")
+       ->required()
+       ->check(CLI::ExistingPath);
+
+    app.add_option("target-file-path", targetFile, "Target file path")
+       ->required()
+       ->check(CLI::ExistingPath);
+
+    try 
+    {
+        app.parse(argc, argv);
+    } 
+    catch (const CLI::ParseError &e) 
+    {
+        return app.exit(e);
+    }
+
+
     try
     {
-        if (argc != 5)
-            throw std::string("Bad arg count");
-
-
-        fs::path unitName = argv[1];
-        fs::path unitRoot = argv[2];
-
-        fs::path confFile = argv[3];
-        fs::path targetFile = argv[4];
-
         fs::path sysroot = fs::absolute("Toolchains/linux/sysroot");
 
         LinuxCompilerFactory compilerFactory = LinuxCompilerFactory(sysroot);

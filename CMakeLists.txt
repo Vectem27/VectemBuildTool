@@ -24,6 +24,7 @@ if (EXISTS ${SCRIPT_DIR})
         DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 endif()
 
+
 # Lua
 
 set(LIBS_DIR ${CMAKE_SOURCE_DIR}/ThirdParty)
@@ -44,8 +45,16 @@ endif()
 target_link_libraries(VectemBuildTool PRIVATE ${LUA_LIB})
 target_include_directories(VectemBuildTool SYSTEM PRIVATE ${LUA_DIR}/src)
 
+
 # Sol2 (Include only)
 
 set(SOL2_DIR ${LIBS_DIR}/sol2/)
 set(SOL2_INC_DIR ${SOL2_DIR}/include)
 target_include_directories(VectemBuildTool SYSTEM PRIVATE ${SOL2_INC_DIR})
+
+
+# Cli11 (Include only)
+
+set(CLI11_DIR ${LIBS_DIR}/CLI11/)
+set(CLI11_INC_DIR ${CLI11_DIR})
+target_include_directories(VectemBuildTool SYSTEM PRIVATE ${CLI11_INC_DIR})
