@@ -3,5 +3,7 @@
 EXECUTABLE=VectemBuildTool
 EXECUTABLE_DIR=bin
 
-cd ./"$EXECUTABLE_DIR" || exit 1
-./"$EXECUTABLE" "$@"
+#cd ./"$EXECUTABLE_DIR" || exit 1
+#./"$EXECUTABLE" "$@"
+
+./"$EXECUTABLE_DIR"/"$EXECUTABLE" "$@"

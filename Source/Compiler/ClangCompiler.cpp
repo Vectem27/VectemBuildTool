@@ -1,5 +1,5 @@
 
-#include "LinuxCompiler.h"
+#include "ClangCompiler.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -64,11 +64,11 @@ static void ExecuteLinking(fs::path arPath, std::vector<std::string> argStrings)
     }
 }
 
-void LinuxCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const
+void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const
 {
     std::vector<std::string> argStrings;
 
-    fs::path clangPath = (sysroot / "clang/bin/clang++");
+    fs::path clangPath = "clang++";
 
     // Set command argument
     argStrings.push_back(clangPath);
@@ -83,12 +83,6 @@ void LinuxCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
 
     // Set cpp version
     argStrings.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
-    
-    argStrings.push_back("-nostdinc++"); // Ignore c++ standard includes
-    argStrings.push_back("-isystem"); // Include system
-    argStrings.push_back(sysroot / "clang/include/c++/v1"); // C++ includes
-    argStrings.push_back("-isystem"); // Include system
-    argStrings.push_back(sysroot / "clang/include/x86_64-unknown-linux-gnu/c++/v1"); // C++ includes
 
     // Set everything to static link
     for (const auto& libPath : compileInfo.staticLibs)
@@ -98,15 +92,6 @@ void LinuxCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
     for (const auto& libPath : compileInfo.staticLibs)
         argStrings.push_back("-l" + (libPath.filename()).string()); 
     argStrings.push_back("-Wl,--end-group");
-
-    argStrings.push_back("-L" + (sysroot / "clang/lib").string()); // C++ library
-    argStrings.push_back("-static-libstdc++");
-    argStrings.push_back("-static-libgcc");
-    argStrings.push_back("-Wl,-Bstatic");
-    argStrings.push_back("-lc++");
-    argStrings.push_back("-lc++abi");
-    argStrings.push_back("-lunwind");
-
 
     // Set c to dynamic link
     argStrings.push_back("-Wl,-Bdynamic");
@@ -120,11 +105,11 @@ void LinuxCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
     ExecuteCompilation(clangPath, argStrings);
 }
 
-void LinuxCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
+void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
 {
 
-    fs::path clangPath = (sysroot / "clang/bin/clang++");
-    fs::path arPath = (sysroot / "clang/bin/llvm-ar");
+    fs::path clangPath = "clang++";
+    fs::path arPath = "ar";
     fs::path objDir = compileInfo.buildOutputPath / "obj";
     fs::path libDir = compileInfo.buildOutputPath / "lib";
 
@@ -174,7 +159,7 @@ void LinuxCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
     ExecuteLinking(arPath, argStrings);
 }
 
-std::string LinuxCompiler::GetCppVersionClangOption(CppVersion version) const
+std::string ClangCompiler::GetCppVersionClangOption(CppVersion version) const
 {
     std::string opt("-std=");
     switch (version)

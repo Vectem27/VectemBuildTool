@@ -19,7 +19,7 @@ printf "%b(1) Compilation du projet...%b\n" "$COL_GREEN" "$COL_NONE"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR" || exit 1
 
-cmake .. || exit 1
+cmake -DCMAKE_BUILD_TYPE=Debug .. || exit 1
 cmake --build . || exit 1
 
 # Execute

@@ -1,27 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
 
-if(LINUX)
-    set(CMAKE_SYSTEM_NAME Linux)
-
-    set(TOOLCHAIN_ROOT ${CMAKE_SOURCE_DIR}/bin/Toolchains/linux)
-    set(CMAKE_SYSROOT ${TOOLCHAIN_ROOT}/sysroot)
-
-    set(CMAKE_CXX_COMPILER ${CMAKE_SYSROOT}/clang/bin/clang++)
-    set(CMAKE_C_COMPILER ${CMAKE_SYSROOT}/clang/bin/clang)
-
-    set(CMAKE_C_FLAGS_INIT   "--sysroot=${CMAKE_SYSROOT}")
-    set(CMAKE_CXX_FLAGS_INIT "--sysroot=${CMAKE_SYSROOT} -stdlib=libc++")
-
-    set(CMAKE_EXE_LINKER_FLAGS "-fuse-ld=lld")
-
-    set(CMAKE_LINKER ${CMAKE_SYSROOT}/clang/bin/ld.lld)
-
-    set(CMAKE_FIND_ROOT_PATH ${CMAKE_SYSROOT})
-    set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-    set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
-    set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-endif()
-
 project(VectemBuildTool
     VERSION 0.1.0
     LANGUAGES C CXX

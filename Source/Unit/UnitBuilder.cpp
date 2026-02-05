@@ -51,7 +51,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
             unitRulesFile = unitRulesFileTest;
             buildOutput = buildData.unitRoot / conf.buildDir / platform;
             for (const auto& moduleDir : conf.modulesDirs)
-                modulesDirs.emplace_back(std::move(buildData.unitRoot / moduleDir));
+                modulesDirs.emplace_back(buildData.unitRoot / moduleDir);
             break;
         }
     }
@@ -84,6 +84,9 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
         for (const fs::path& dir : modulesDirs)
         {
             fs::path fullDir = dir / moduleRules.name;
+
+            std::cout << "Looking for module '" << moduleRules.name << "' in directory : " << fullDir << std::endl;
+
             if (fs::exists(fullDir) && fs::is_directory(fullDir))
             {
                 moduleDir = fullDir;
@@ -94,7 +97,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
         moduleManager.AddModule(moduleRules.name, moduleDir);
         
         if (moduleDir.empty())
-            throw UnitBuilderException("Unable to find module directory for : '" + moduleRules.name + "'.");
+            throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" + moduleRules.name + "'.");
 
         if (!fs::exists(moduleDir / "Module.lua") || ! fs::is_regular_file(moduleDir / "Module.lua"))
             throw UnitBuilderException("Missing 'Module.lua' file for : '" + moduleRules.name + "'.");

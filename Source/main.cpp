@@ -9,7 +9,7 @@
 #include "Compiler/Compilation.h"
 #include "Compiler/ICompiler.h"
 #include "Module/ModuleInfoReader.h"
-#include "Compiler/LinuxCompiler.h"
+#include "Compiler/ClangCompiler.h"
 
 #include "Unit/UnitBuilder.h"
 
@@ -61,11 +61,15 @@ int main(int argc, char* argv[])
         return app.exit(e);
     }
 
+    unitRoot = fs::absolute(unitRoot);
+    confFile = fs::absolute(confFile);
+    targetFile = fs::absolute(targetFile);
+
     try
     {
-        fs::path sysroot = fs::absolute("Toolchains/linux/sysroot");
+        //fs::path sysroot = fs::absolute("Toolchains/linux/sysroot");
 
-        LinuxCompilerFactory compilerFactory = LinuxCompilerFactory(sysroot);
+        ClangCompilerFactory compilerFactory = ClangCompilerFactory();
 
         UnitBuilder builder = UnitBuilder(compilerFactory);
 
@@ -79,75 +83,6 @@ int main(int argc, char* argv[])
         builder.BuildUnit(buildData);
 
         return EXIT_SUCCESS;
-
-        std::string type = argv[1];
-        fs::path moduleDir = argv[2];
-        fs::path buildDest = argv[3];
-
-        fs::path moduleConfigPath = moduleDir / "Module.lua";
-        fs::path moduleSourceDir = moduleDir / "Source";
-        fs::path moduleBuildDir = moduleDir / "Build";
-
-        ModuleInfo info;
-        {
-            // Start lua
-            sol::state lua; // Auto close at the scope end
-            lua.open_libraries(
-                sol::lib::base,
-                sol::lib::table,
-                sol::lib::math,
-                sol::lib::string,
-                sol::lib::coroutine
-            );
-            ModuleInfoReader reader(lua);
-            info = reader.ReadInfo(moduleConfigPath);
-        }
-
-        std::cout << "Module name : " << info.name << std::endl;
-        for (const auto& dir : info.publicIncludeDirectories)
-            std::cout << "-public dir : " << dir << std::endl;
-
-        std::vector<fs::path> cppFiles;
-
-        for (auto& p : fs::recursive_directory_iterator(moduleDir / "Source")) 
-        {
-        if (p.is_regular_file()) { // vérifier que c'est un fichier
-            if (p.path().extension() == ".cpp" || p.path().extension() == ".cxx") {
-                cppFiles.push_back(p.path());
-            }
-        }
-
-        fs::create_directories(moduleBuildDir);
-
-
-        LinuxCompiler linux_comp(sysroot);
-
-        CompileInfo ci = {};
-        ci.outputName = info.name;
-        ci.buildOutputPath = moduleBuildDir;
-        ci.filesToCompile = cppFiles;
-        ci.includesPaths = {};
-        ci.cppVersion = CppVersion::CPP_20;
-        ci.optimisation = CompilationOptimisation::OPTIMIZED;
-
-        if (type == "exe")
-        {
-            ExecutableCompileInfo eci(ci);
-            eci.staticLibs = {"/home/vectem/Projets/Perso/VectemEngine/VectemBuildTool/Test/ModuleTest/Build/lib/ModuleTest"};
-            linux_comp.CompileExecutable(eci);
-        }
-        else if (type == "lib")
-        {
-            LibraryCompileInfo lci(ci);
-            lci.linkType = LinkType::STATIC;
-
-            linux_comp.CompileLibrary(lci);
-        }
-        else
-            throw std::string("Unknown tyoe : " + type);
-
-        return EXIT_SUCCESS;
-    }
     }
     catch (std::string e)
     {
