@@ -2,8 +2,8 @@
 #include "ClangCompiler.h"
 
 #include <iostream>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "Compiler/Compilation.h"
 
@@ -19,7 +19,7 @@ static void ExecuteCompilation(fs::path clangPath, std::vector<std::string> argS
     args.push_back(nullptr); // NULL final
 
     std::stringstream ss;
-    ss<< "Starting compilation : ";
+    ss << "Starting compilation : ";
     for (const auto& arg : args)
         ss << " " << arg;
     std::cout << ss.str() << std::endl;
@@ -28,9 +28,9 @@ static void ExecuteCompilation(fs::path clangPath, std::vector<std::string> argS
     if (pid == 0)
     {
         execvp(clangPath.c_str(), const_cast<char**>(args.data()));
-        perror("execvp");        
+        perror("execvp");
     }
-    else 
+    else
     {
         wait(nullptr);
         std::cout << "Command finished\n";
@@ -46,7 +46,7 @@ static void ExecuteLinking(fs::path arPath, std::vector<std::string> argStrings)
     args.push_back(nullptr); // NULL final
 
     std::stringstream ss;
-    ss<< "Starting linking : ";
+    ss << "Starting linking : ";
     for (const auto& arg : args)
         ss << " " << arg;
     std::cout << ss.str() << std::endl;
@@ -55,9 +55,9 @@ static void ExecuteLinking(fs::path arPath, std::vector<std::string> argStrings)
     if (pid == 0)
     {
         execvp(arPath.c_str(), const_cast<char**>(args.data()));
-        perror("execvp");        
+        perror("execvp");
     }
-    else 
+    else
     {
         wait(nullptr);
         std::cout << "Command finished\n";
@@ -86,11 +86,11 @@ void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
 
     // Set everything to static link
     for (const auto& libPath : compileInfo.staticLibs)
-        argStrings.push_back("-L" + (libPath.parent_path()).string()); 
+        argStrings.push_back("-L" + (libPath.parent_path()).string());
 
     argStrings.push_back("-Wl,--start-group");
     for (const auto& libPath : compileInfo.staticLibs)
-        argStrings.push_back("-l" + (libPath.filename()).string()); 
+        argStrings.push_back("-l" + (libPath.filename()).string());
     argStrings.push_back("-Wl,--end-group");
 
     // Set c to dynamic link
@@ -131,7 +131,6 @@ void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
         for (const auto& include : compileInfo.includesPaths)
             argStrings.push_back("-I" + include.string());
 
-            
         argStrings.push_back("-c");
 
         argStrings.push_back(file);
@@ -166,15 +165,15 @@ std::string ClangCompiler::GetCppVersionClangOption(CppVersion version) const
     {
     case CppVersion::CPP_11:
         return opt + "c++11";
-        case CppVersion::CPP_14:
-            return opt + "c++14";
-        case CppVersion::CPP_17:
-            return opt + "c++17";
-        case CppVersion::CPP_20:
-            return opt + "c++20";
-        case CppVersion::CPP_23:
-            return opt + "c++23";
-        default:
-            return opt + "c++11";
+    case CppVersion::CPP_14:
+        return opt + "c++14";
+    case CppVersion::CPP_17:
+        return opt + "c++17";
+    case CppVersion::CPP_20:
+        return opt + "c++20";
+    case CppVersion::CPP_23:
+        return opt + "c++23";
+    default:
+        return opt + "c++11";
     }
 }
