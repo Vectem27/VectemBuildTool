@@ -4,11 +4,7 @@
 **/build/
 ThirdParty/lua-*/lib
 
-bin/Scripts/
-bin/Toolchains/linux/build/
-bin/Toolchains/linux/sysroot/
-bin/Toolchains/linux/*.exe
-bin/Toolchains/linux/VectemBuildTool
+bin/
 
 # Configuration
 .vscode/
