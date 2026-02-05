@@ -61,7 +61,6 @@ int main(int argc, char* argv[])
         return app.exit(e);
     }
 
-
     try
     {
         fs::path sysroot = fs::absolute("Toolchains/linux/sysroot");
