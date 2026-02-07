@@ -9,17 +9,17 @@ Vectem build tool is a customisable C++ module based build system.
 Pattern command :
 
 ```bash
-VectemBuildTool BuildConfig.lua --target-dir targetDir/ --project ProjectDir/ TargetName --dependancy-project DepProjectDir/
+VectemBuildTool --config BuildConfig.lua --project ProjectDir/ TargetName --dependancy-project DepProjectDir/
 ```
 
 Simple project example :
 
 ```bash
-VectemBuildTool BuildConfig.lua --target-dir Targets/ --project ExampleProject/ Debug
+VectemBuildTool --config BuildConfig.lua --project ExampleProject/ --target Debug
 ```
 
 Project with engine example :
 
 ```bash
-VectemBuildTool BuildConfig.lua --target-dir Engine/Targets/ --project Project/ Release --dependancy-project Engine/
+VectemBuildTool --config BuildConfig.lua --project Project/ --target Release --dependancy-projects Engine/ --dependancy-targets Release
 ```
