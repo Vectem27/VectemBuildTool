@@ -83,8 +83,8 @@ UnitsConfig = UnitsConfigSet({
 
     Program = {
         ModulesDir      = { "Modules" },
-        ModuleRootName  = "${ModuleName}",
-        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleRootName  = "${ModuleName}Module",
+        ModuleFileName  = "${ModuleName}.Module.lua",
         ModuleClassName = "${ModuleName}Rules", -- Not implemented
 
         BuildDir = "Build",
@@ -99,10 +99,9 @@ UnitsConfig = UnitsConfigSet({
                 bRecursive=true
             }
         }
-        -- TODO: Add regex for lua filenames e.g. for module : '{ModuleName}.Module.lua'
     },
     Engine = {
-        ModulesDir      = { "Modules" }, -- Regex
+        ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
         ModuleClassName = "${ModuleName}Rules",
@@ -113,7 +112,7 @@ UnitsConfig = UnitsConfigSet({
         }
     },
     Plugin = {
-        ModulesDir      = { "Modules" }, -- Regex
+        ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
         ModuleClassName = "${ModuleName}Rules",
