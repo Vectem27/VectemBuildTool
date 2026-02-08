@@ -8,6 +8,7 @@
 
 #include "Compiler/ICompiler.h"
 #include "Module/IModuleInfoReader.h"
+#include "Module/IModuleManager.h"
 #include "UnitConfigReader.h"
 #include "UnitRulesReader.h"
 
@@ -70,7 +71,6 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             }
         }
 
-        moduleManager.AddModule(moduleRules.name, moduleDir);
 
         if (moduleDir.empty())
             throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" +
@@ -82,12 +82,21 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         if (!fs::exists(moduleRulesFile) || !fs::is_regular_file(moduleRulesFile))
             throw UnitBuilderException("Missing '" + moduleRulesFile.string() + "' file for : '" + moduleRules.name + "'.");
 
+
+        ModuleStructureInfo moduleStructure = {
+            .rootDir = moduleDir,
+            .buildRulesFile = moduleRulesFile,
+            .codeDir = "Source"
+        };
+
+        moduleManager.AddModule(moduleRules.name, moduleStructure);
+
         auto moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name, *moduleReader);
 
         std::cout << "Module directory : " << moduleDir << std::endl;
 
         std::vector<fs::path> cppFiles;
-        for (auto& p : fs::recursive_directory_iterator(moduleDir))
+        for (auto& p : fs::recursive_directory_iterator(moduleStructure.rootDir / moduleStructure.codeDir))
         {
             if (!p.is_regular_file())
                 continue;

@@ -8,9 +8,9 @@
 #include <string>
 
 
-void ModuleManager::AddModule(std::string moduleName, std::filesystem::path moduleDir) 
+void ModuleManager::AddModule(std::string moduleName, ModuleStructureInfo moduleStructure) 
 {
-    modulesDirectories[moduleName] = moduleDir;
+    modulesStructure[moduleName] = moduleStructure;
 }
 
 ModuleInfo ModuleManager::ResolveModuleInfo(std::string moduleName, IModuleInfoReader& moduleReader) const 
@@ -26,7 +26,7 @@ ModuleInfo ModuleManager::ResolveModuleInfo(std::string moduleName, IModuleInfoR
 
     try 
     {
-        res = moduleReader.ReadInfo(modulesDirectories.at(moduleName) / "Module.lua");
+        res = moduleReader.ReadInfo(modulesStructure.at(moduleName).buildRulesFile);
     } 
     catch (std::exception e) 
     {
