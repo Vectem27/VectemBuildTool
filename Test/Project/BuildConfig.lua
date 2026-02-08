@@ -82,10 +82,10 @@ UnitsConfig = UnitsConfigSet({
     UnitFileName = "${UnitName}.Unit.lua",
 
     Program = {
-        ModulesDir      = { "Modules" }, -- Regex
+        ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
-        ModuleClassName = "${ModuleName}Rules",
+        ModuleClassName = "${ModuleName}Rules", -- Not implemented
 
         BuildDir = "Build",
 

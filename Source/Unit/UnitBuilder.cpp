@@ -53,10 +53,13 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     {
         // Get module info :
 
+        std::string moduleRootName = unitConfig.moduleRootName;
+        moduleRootName = std::regex_replace(moduleRootName, std::regex(R"(\$\{ModuleName\})"), moduleRules.name);
+
         fs::path moduleDir;
-        for (const fs::path& dir : modulesDirs)
+        for (const fs::path& dir : unitConfig.modulesDirs)
         {
-            fs::path fullDir = dir / moduleRules.name;
+            fs::path fullDir = dir / moduleRootName;
 
             std::cout << "Looking for module '" << moduleRules.name << "' in directory : " << fullDir << std::endl;
 
@@ -72,9 +75,12 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         if (moduleDir.empty())
             throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" +
                                        moduleRules.name + "'.");
+        std::string moduleFileName = unitConfig.moduleFileName;
+        moduleFileName = std::regex_replace(moduleFileName, std::regex(R"(\$\{ModuleName\})"), moduleRules.name);
+        fs::path moduleRulesFile = moduleDir / moduleFileName;
 
-        if (!fs::exists(moduleDir / "Module.lua") || !fs::is_regular_file(moduleDir / "Module.lua"))
-            throw UnitBuilderException("Missing 'Module.lua' file for : '" + moduleRules.name + "'.");
+        if (!fs::exists(moduleRulesFile) || !fs::is_regular_file(moduleRulesFile))
+            throw UnitBuilderException("Missing '" + moduleRulesFile.string() + "' file for : '" + moduleRules.name + "'.");
 
         auto moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name, *moduleReader);
 
