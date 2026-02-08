@@ -69,11 +69,8 @@ Platforms = EnumFlag({
 
 UnitCompilationTypes = Enum({
     "Executable",
-    "StaticLibrary",
-    "DynamicLibrary"
+    "Library",
 })
-
-
 
 ------------
 -- Config --
@@ -82,17 +79,33 @@ UnitCompilationTypes = Enum({
 -- Units config
 
 UnitsConfig = UnitsConfigSet({
+    UnitFileName = "${UnitName}.Unit.lua",
+
     Program = {
-        ModulesDir = { "Modules" },
+        ModulesDir      = { "Modules" }, -- Regex
+        ModuleRootName  = "${ModuleName}",
+        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleClassName = "${ModuleName}Rules",
+
         BuildDir = "Build",
-        TargetsDir = "Targets",
+
+        TargetsDir = "Targets", -- TODO: check functionalities
+
         SubUnits = {
-            {Dir = "Plugins", UnitType = "Plugin", bRecursive=true}
+            {
+                Dir = "Plugins",
+                UnitType = "Plugin",
+                UnitRootName = "${UnitName}",
+                bRecursive=true
+            }
         }
         -- TODO: Add regex for lua filenames e.g. for module : '{ModuleName}.Module.lua'
     },
     Engine = {
-        ModulesDir = { "Modules" },
+        ModulesDir      = { "Modules" }, -- Regex
+        ModuleRootName  = "${ModuleName}",
+        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleClassName = "${ModuleName}Rules",
         BuildDir = "Build",
         TargetsDir = "Targets",
         SubUnitsDir = {
@@ -100,7 +113,10 @@ UnitsConfig = UnitsConfigSet({
         }
     },
     Plugin = {
-        ModulesDir = { "Modules" },
+        ModulesDir      = { "Modules" }, -- Regex
+        ModuleRootName  = "${ModuleName}",
+        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleClassName = "${ModuleName}Rules",
         BuildDir = "Build",
         SubUnitsDir = {}
     }
@@ -111,7 +127,7 @@ UnitsConfig = UnitsConfigSet({
 local TargetDefaultRules = RuleSet({
     SupportedPlatforms = "All",
     OverrideUnitCompilationType = {
-        -- e.g. Plugin = UnitCompilationTypes.StaticLibrary
+        -- e.g. Plugin = UnitCompilationTypes.Library
     }
 })
 
@@ -136,18 +152,21 @@ end
 -- Units rules base
 
 local ProgramDefaultRules = RuleSet({
+    UnitType = "Program",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Executable,
     Modules = {}
 })
 
 local EngineDefaultRules = RuleSet({
+    UnitType = "Engine",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.StaticLibrary,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
+    UnitType = "Plugin",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.DynamicLibrary,
     Modules = {}

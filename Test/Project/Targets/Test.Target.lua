@@ -1,4 +1,4 @@
 
-TestTarget = Target({
+Target = Target({
     CppVersion = 20
 })

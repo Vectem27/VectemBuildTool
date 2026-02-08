@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <regex>
 #include <sol/sol.hpp>
 
 #include "Compiler/ICompiler.h"
@@ -10,63 +11,35 @@
 #include "UnitConfigReader.h"
 #include "UnitRulesReader.h"
 
-#include "Module/ModuleManager.h"
 #include "Module/ModuleInfoReader.h"
+#include "Module/ModuleManager.h"
 
 namespace fs = std::filesystem;
 
-void UnitBuilder::BuildUnit(const BuildData& buildData) const
+void UnitBuilder::BuildUnit(const BuildData& buildData)
 {
     sol::state lua;
-    lua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine);
+    lua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
+
+    // Configuration
 
     lua.safe_script_file(buildData.configurationFile);
+    ReadConfiguration(lua, buildData);
 
-    IUnitConfigReader* unitConfigReader = new UnitConfigReader(lua);
-    std::vector<UnitInfo> unitsConfigs = unitConfigReader->ReadUnitsConfig(buildData.unitRoot);
-    delete unitConfigReader;
+    // Target
 
-    std::string platform = "Linux";
+    //lua.safe_script_file(buildData.buildTargetFile);
+    //ReadTarget(lua, buildData);
 
-    // Configurations check
-    for (const auto& conf : unitsConfigs)
-    {
-        if (conf.modulesDirs.empty())
-            throw UnitBuilderException("Module dir is empty for config unit : '" + conf.name + "'.");
-        // std::cout << "Unit config [Name : " << conf.name << ", Build dir : " << conf.buildDir <<
-        //              ", Target dir : " << conf.targetsDir << ", First module dir : " << conf.modulesDirs.front() <<
-        //              "]" << std::endl;
-    }
+    // Unit
 
-    // Get unit config
-    std::filesystem::path unitRulesFile;
-    std::vector<std::filesystem::path> modulesDirs;
-    std::filesystem::path buildOutput;
+    lua.safe_script_file(unitRulesFile);
+    ReadUnitRules(lua, buildData);
 
-    for (const auto& conf : unitsConfigs)
-    {
-        std::filesystem::path unitRulesFileTest = buildData.unitRoot / (buildData.unitName + "." + conf.name + ".lua");
-        if (std::filesystem::exists(unitRulesFileTest) && std::filesystem::is_regular_file(unitRulesFileTest))
-        {
-            unitRulesFile = unitRulesFileTest;
-            buildOutput = buildData.unitRoot / conf.buildDir / platform;
-            for (const auto& moduleDir : conf.modulesDirs)
-                modulesDirs.emplace_back(buildData.unitRoot / moduleDir);
-            break;
-        }
-    }
-
-
-    // TODO : Process target
+    ReadModulesrules(lua, buildData);
 
     fs::create_directories(buildOutput);
 
-    lua.safe_script_file(unitRulesFile);
-
-
-    IUnitRulesReader* unitRulesReader = new UnitRulesReader(lua);
-    UnitRules unitRules = unitRulesReader->ReadUnitsRules(buildData.unitName);
-    delete unitRulesReader;
 
     // Start compilation
 
@@ -95,20 +68,20 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
         }
 
         moduleManager.AddModule(moduleRules.name, moduleDir);
-        
+
         if (moduleDir.empty())
-            throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" + moduleRules.name + "'.");
+            throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" +
+                                       moduleRules.name + "'.");
 
-        if (!fs::exists(moduleDir / "Module.lua") || ! fs::is_regular_file(moduleDir / "Module.lua"))
+        if (!fs::exists(moduleDir / "Module.lua") || !fs::is_regular_file(moduleDir / "Module.lua"))
             throw UnitBuilderException("Missing 'Module.lua' file for : '" + moduleRules.name + "'.");
-
 
         auto moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name, *moduleReader);
 
         std::cout << "Module directory : " << moduleDir << std::endl;
 
         std::vector<fs::path> cppFiles;
-        for (auto& p : fs::recursive_directory_iterator(moduleDir)) 
+        for (auto& p : fs::recursive_directory_iterator(moduleDir))
         {
             if (!p.is_regular_file())
                 continue;
@@ -117,32 +90,27 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
                 cppFiles.emplace_back(std::move(p.path()));
         }
 
-
         // Compile
         std::cout << "Start module compilation : " << moduleRules.name << std::endl;
-        
-        CompileInfo ci = {
-            .outputName = moduleRules.name,
-            .buildOutputPath = buildOutput,
-            .filesToCompile = cppFiles,
-            .includesPaths = {moduleDir},
-            .cppVersion = CppVersion::CPP_20,
-            .optimisation = CompilationOptimisation::OPTIMIZED
-        };
+
+        CompileInfo ci = {.outputName = moduleRules.name,
+                          .buildOutputPath = buildOutput,
+                          .filesToCompile = cppFiles,
+                          .includesPaths = {moduleDir},
+                          .cppVersion = CppVersion::CPP_20,
+                          .optimisation = CompilationOptimisation::OPTIMIZED};
 
         LibraryCompileInfo lci(ci);
 
         compiler->CompileLibrary(lci);
     }
 
-    CompileInfo ci = {
-        .outputName = buildData.unitName,
-        .buildOutputPath = buildOutput,
-        .filesToCompile = {},
-        .includesPaths = {},
-        .cppVersion = CppVersion::CPP_20,
-        .optimisation = CompilationOptimisation::OPTIMIZED
-    };
+    CompileInfo ci = {.outputName = buildData.unitName,
+                      .buildOutputPath = buildOutput,
+                      .filesToCompile = {},
+                      .includesPaths = {},
+                      .cppVersion = CppVersion::CPP_20,
+                      .optimisation = CompilationOptimisation::OPTIMIZED};
 
     ExecutableCompileInfo eci(ci);
     eci.staticLibs = {};
@@ -153,4 +121,55 @@ void UnitBuilder::BuildUnit(const BuildData& buildData) const
     delete compiler;
 
     delete moduleReader;
+}
+
+void UnitBuilder::ReadConfiguration(sol::state& luaState, const BuildData& buildData)
+{
+    std::cout << buildData.unitName << std::endl;
+
+    IUnitConfigReader* unitConfigReader = new UnitConfigReader(luaState);
+    unitsConfigs = unitConfigReader->ReadUnitsConfig(buildData.unitRoot);
+    delete unitConfigReader;
+
+ 
+    std::string unitFileName = unitsConfigs.UnitFileName;
+    unitFileName = std::regex_replace(unitFileName, std::regex(R"(\$\{UnitName\})"), buildData.unitName);
+    unitRulesFile = buildData.unitRoot / unitFileName;
+}
+
+void UnitBuilder::ReadTarget(sol::state& luaState, const BuildData& buildData)
+{
+    // TODO: Complete this function
+}
+
+void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData) 
+{
+    IUnitRulesReader* unitRulesReader = new UnitRulesReader(luaState);
+    unitRules = unitRulesReader->ReadUnitsRules(buildData.unitName);
+    delete unitRulesReader;
+
+    // Config Unit
+    for (const auto& unit : unitsConfigs.unitsInfo)
+    {
+        if (unit.name != unitRules.type)
+            continue;
+
+        unitConfig = unit;
+
+        break;
+    }
+
+    if (!std::filesystem::exists(unitRulesFile) && std::filesystem::is_regular_file(unitRulesFile))
+        throw UnitBuilderException("Unit rules file does not exist for the config unit : '" + unitConfig.name + "'.");
+
+    buildOutput = buildData.unitRoot / unitConfig.buildDir / platform;
+}
+
+void UnitBuilder::ReadModulesrules(sol::state& luaState, const BuildData& buildData) 
+{
+    if (unitConfig.modulesDirs.empty())
+        throw UnitBuilderException("Module dir is empty for the config unit : '" + unitConfig.name + "'.");
+
+    for (const auto& moduleDir : unitConfig.modulesDirs)
+        modulesDirs.emplace_back(buildData.unitRoot / moduleDir);
 }

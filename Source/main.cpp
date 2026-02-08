@@ -6,9 +6,6 @@
 #include <sys/wait.h>
 #include <vector>
 
-#include "Compiler/Compilation.h"
-#include "Compiler/ICompiler.h"
-#include "Module/ModuleInfoReader.h"
 #include "Compiler/ClangCompiler.h"
 
 #include "Unit/UnitBuilder.h"
@@ -64,7 +61,7 @@ int main(int argc, char* argv[])
        ->required()
        ->check(CLI::ExistingPath);
 
-    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path target-name)")
+    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-type target-name)")
        ->each([](const std::string& input) -> std::string {
             static bool isProjectPath = true;
 
@@ -77,8 +74,9 @@ int main(int argc, char* argv[])
                         "Project path does not exist : " + input
                     );
                 }
+
             }
-            else
+            else 
             {
                 if (input.empty())
                 {

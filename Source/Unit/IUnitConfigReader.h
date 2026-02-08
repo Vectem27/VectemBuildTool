@@ -13,5 +13,5 @@ class IUnitConfigReader
 {
 public:
     virtual ~IUnitConfigReader() = default;
-    virtual std::vector<UnitInfo> ReadUnitsConfig(std::filesystem::path unitRoot) const = 0;
+    virtual UnitsConfig ReadUnitsConfig(std::filesystem::path unitRoot) const = 0;
 };
