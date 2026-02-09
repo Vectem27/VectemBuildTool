@@ -4,8 +4,11 @@
 #include <filesystem>
 
 #include "../Compiler/ICompiler.h"
+#include "Target/Target.h"
 #include "Unit/Unit.h"
 #include "Unit/UnitRulesReader.h"
+
+class ITargetRulesReader;
 
 struct BuildData
 {
@@ -13,6 +16,7 @@ struct BuildData
     std::filesystem::path unitRoot;
     std::filesystem::path configurationFile;
     std::string buildTarget;
+    std::string platform;
 };
 
 class UnitBuilderException : public std::exception 
@@ -79,10 +83,11 @@ private:
 
     std::filesystem::path unitRulesFile;
     std::filesystem::path buildTargetFile;
+    std::string buildTargetClassName;
     std::vector<std::filesystem::path> modulesDirs;
     std::filesystem::path buildOutput;
 
-    std::string platform = "Linux";
 
     UnitRules unitRules;
+    TargetRules targetRules;
 };

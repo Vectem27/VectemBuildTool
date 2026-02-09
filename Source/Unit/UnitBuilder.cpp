@@ -12,6 +12,8 @@
 #include "UnitConfigReader.h"
 #include "UnitRulesReader.h"
 
+#include "Target/TargetRulesReader.h"
+
 #include "Module/ModuleInfoReader.h"
 #include "Module/ModuleManager.h"
 
@@ -172,17 +174,25 @@ void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData
     if (!std::filesystem::exists(unitRulesFile) && std::filesystem::is_regular_file(unitRulesFile))
         throw UnitBuilderException("Unit rules file does not exist for the config unit : '" + unitConfig.name + "'.");
 
-    buildOutput = buildData.unitRoot / unitConfig.buildDir / platform;
+    buildOutput = buildData.unitRoot / unitConfig.buildDir / buildData.platform / buildData.buildTarget;
 
 
-    std::string buildTargetFileName = unitConfig.targetFileName;
-    buildTargetFileName = std::regex_replace(buildTargetFileName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
-    buildTargetFile = unitConfig.targetsDir / buildTargetFileName;
+    if(!unitConfig.targetFileName.empty())
+    {
+        std::string buildTargetFileName = unitConfig.targetFileName;
+        buildTargetFileName = std::regex_replace(buildTargetFileName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
+        buildTargetFile = unitConfig.targetsDir / buildTargetFileName;
+
+        buildTargetClassName = unitConfig.targetClassName;
+        buildTargetClassName = std::regex_replace(buildTargetClassName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
+    }
 }
 
 void UnitBuilder::ReadTarget(sol::state& luaState, const BuildData& buildData)
 {
-    // TODO: Complete this function
+    ITargetRulesReader* targetRulesReader = new TargetRulesReader(luaState);
+    targetRules = targetRulesReader->ReadRules(buildData.buildTarget, buildTargetClassName);
+    delete targetRulesReader;
 }
 
 void UnitBuilder::ReadModulesrules(sol::state& luaState, const BuildData& buildData) 

@@ -9,6 +9,8 @@ add_executable(VectemBuildTool
     Unit/UnitBuilder.cpp
     Unit/UnitConfigReader.cpp
     Unit/UnitRulesReader.cpp
+
+    Target/TargetRulesReader.cpp
 )
 
 target_include_directories(VectemBuildTool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

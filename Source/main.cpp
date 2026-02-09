@@ -150,7 +150,8 @@ int main(int argc, char* argv[])
             .unitName = unitName,
             .unitRoot = unitRoot,
             .configurationFile = confFile,
-            .buildTarget = buildTarget
+            .buildTarget = buildTarget,
+            .platform  = "Linux"
         };
 
         builder.BuildUnit(buildData);
