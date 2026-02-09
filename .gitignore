@@ -10,3 +10,4 @@ bin/
 .vscode/
 ClangWorkingCommand.sh
 Test/TestCommands.txt
+x-build-toolchain.sh
