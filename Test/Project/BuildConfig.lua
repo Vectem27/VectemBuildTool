@@ -132,9 +132,11 @@ UnitsConfig = UnitsConfigSet({
         ModuleFileName  = "${ModuleName}.Module.lua",
         ModuleClassName = "${ModuleName}Rules", -- Not implemented
 
-        BuildDir = "Build",
+        TargetsDir = "Targets",
+        TargetFileName  = "${TargetName}.Target.lua",
+        TargetClassName = "${TargetName}TagetRules",
 
-        TargetsDir = "Targets", -- TODO: check functionalities
+        BuildDir = "Build",
 
         SubUnits = {
             {
@@ -153,8 +155,13 @@ UnitsConfig = UnitsConfigSet({
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
         ModuleClassName = "${ModuleName}Rules",
-        BuildDir = "Build",
+
         TargetsDir = "Targets",
+        TargetFileName  = "${TargetName}.Target.lua",
+        TargetClassName = "${TargetName}TagetRules",
+
+        BuildDir = "Build",
+
         SubUnitsDir = {
             {
                 Dir = "Plugins", 
@@ -191,7 +198,7 @@ local TargetDefaultRules = RuleSet({
 })
 
 function TargetRules(default)
-    return setmetatable(defaults, {
+    return setmetatable(default, {
         __index = TargetDefaultRules
     })
 end

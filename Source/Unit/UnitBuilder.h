@@ -12,7 +12,7 @@ struct BuildData
     std::string unitName;
     std::filesystem::path unitRoot;
     std::filesystem::path configurationFile;
-    std::filesystem::path buildTargetFile;
+    std::string buildTarget;
 };
 
 class UnitBuilderException : public std::exception 
@@ -78,6 +78,7 @@ private:
     UnitInfo unitConfig;
 
     std::filesystem::path unitRulesFile;
+    std::filesystem::path buildTargetFile;
     std::vector<std::filesystem::path> modulesDirs;
     std::filesystem::path buildOutput;
 

@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     fs::path unitRoot;
 
     fs::path confFile;
-    fs::path targetFile;
+    std::string buildTarget;
     
     std::vector<std::string> dependancyProjectsOptRes;
 
@@ -51,9 +51,8 @@ int main(int argc, char* argv[])
        ->required()
        ->check(CLI::ExistingPath);
 
-    app.add_option("target-file-path", targetFile, "Target file path")
-       ->required()
-       ->check(CLI::ExistingPath);
+    app.add_option("build-target", buildTarget, "Target file path")
+       ->required();
 
     /* Optional */
 
@@ -136,8 +135,6 @@ int main(int argc, char* argv[])
 
     unitRoot = fs::absolute(unitRoot);
     confFile = fs::absolute(confFile);
-    targetFile = fs::absolute(targetFile);
-
 
     /////////////////
     /* Run Program */
@@ -153,7 +150,7 @@ int main(int argc, char* argv[])
             .unitName = unitName,
             .unitRoot = unitRoot,
             .configurationFile = confFile,
-            .buildTargetFile = targetFile
+            .buildTarget = buildTarget
         };
 
         builder.BuildUnit(buildData);

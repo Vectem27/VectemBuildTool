@@ -59,8 +59,11 @@ struct UnitInfo
     std::string moduleFileName;
     std::string moduleClassName;
 
-    std::filesystem::path buildDir;
     std::filesystem::path targetsDir;
+    std::string targetFileName;
+    std::string targetClassName;
+
+    std::filesystem::path buildDir;
     std::vector<SubUnitInfo> subUnits;
 };
 

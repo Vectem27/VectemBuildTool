@@ -27,15 +27,16 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     lua.safe_script_file(buildData.configurationFile);
     ReadConfiguration(lua, buildData);
 
-    // Target
-
-    //lua.safe_script_file(buildData.buildTargetFile);
-    //ReadTarget(lua, buildData);
 
     // Unit
 
     lua.safe_script_file(unitRulesFile);
     ReadUnitRules(lua, buildData);
+
+    // Target
+
+    lua.safe_script_file(buildTargetFile);
+    ReadTarget(lua, buildData);
 
     ReadModulesrules(lua, buildData);
 
@@ -70,7 +71,6 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                 break;
             }
         }
-
 
         if (moduleDir.empty())
             throw UnitBuilderException("Unable to find module directory : '" + moduleDir.string() + "' for module '" +
@@ -152,11 +152,6 @@ void UnitBuilder::ReadConfiguration(sol::state& luaState, const BuildData& build
     unitRulesFile = buildData.unitRoot / unitFileName;
 }
 
-void UnitBuilder::ReadTarget(sol::state& luaState, const BuildData& buildData)
-{
-    // TODO: Complete this function
-}
-
 void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData) 
 {
     IUnitRulesReader* unitRulesReader = new UnitRulesReader(luaState);
@@ -178,6 +173,16 @@ void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData
         throw UnitBuilderException("Unit rules file does not exist for the config unit : '" + unitConfig.name + "'.");
 
     buildOutput = buildData.unitRoot / unitConfig.buildDir / platform;
+
+
+    std::string buildTargetFileName = unitConfig.targetFileName;
+    buildTargetFileName = std::regex_replace(buildTargetFileName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
+    buildTargetFile = unitConfig.targetsDir / buildTargetFileName;
+}
+
+void UnitBuilder::ReadTarget(sol::state& luaState, const BuildData& buildData)
+{
+    // TODO: Complete this function
 }
 
 void UnitBuilder::ReadModulesrules(sol::state& luaState, const BuildData& buildData) 

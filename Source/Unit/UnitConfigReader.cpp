@@ -75,11 +75,21 @@ UnitsConfig UnitConfigReader::ReadUnitsConfig(std::filesystem::path unitRoot) co
                 throw UnitConfigReaderException("Unit config 'ModuleClassName' field is missing for '" + info.name + "'.");
             info.moduleClassName = moduleClassNameField.value();
 
-            // Target dir
+            // Target dir (Target info are not mendatory, some subunits doesn't need one)
             sol::optional<std::string> targetsDirField;
             targetsDirField = infoTable["TargetsDir"].get<sol::optional<std::string>>();
             if (targetsDirField)
                 info.targetsDir = unitRoot / targetsDirField.value();
+
+            sol::optional<std::string> targetFileNameField;
+            targetFileNameField = infoTable["TargetFileName"].get<sol::optional<std::string>>();
+            if (targetFileNameField)
+                info.targetFileName = targetFileNameField.value();
+
+            sol::optional<std::string> targetClassNameField;
+            targetClassNameField = infoTable["TargetClassName"].get<sol::optional<std::string>>();
+            if (targetClassNameField)
+                info.targetClassName = targetClassNameField.value();
 
             // Build dir
             sol::optional<std::string> buildDirField;
