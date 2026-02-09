@@ -3,54 +3,93 @@
 ---------------
 
 function EnumFlag(names)
-    local e = {}
+    local values = {}
     local all = 0
 
     for i, name in ipairs(names) do
+        assert(values[name] == nil, "Duplicate enum value: " .. name)
+
         local value = 1 << (i - 1)
-        e[name] = value
+        values[name] = value
         all = all | value
     end
 
-    e.All = all
+    values.All = all
 
-    return setmetatable(e, {
+    return setmetatable({}, {
+        __index = values,
         __newindex = function()
-            error("Enum is read-only")
+            error("Enum is read-only", 2)
+        end,
+        __pairs = function()
+            return pairs(values)
         end
     })
 end
 
 function Enum(names)
-    local e = {}
+    assert(type(names) == "table", "Enum expects a table")
+
+    local values = {}
 
     for i, name in ipairs(names) do
-        local value = i
-        e[name] = value
+        assert(values[name] == nil, "Duplicate enum value: " .. name)
+        values[name] = i
     end
 
-    return setmetatable(e, {
+    return setmetatable({}, {
+        __index = function(_, key)
+            local v = values[key]
+            if v == nil then
+                error("Invalid enum key: " .. tostring(key), 2)
+            end
+            return v
+        end,
+
         __newindex = function()
-            error("Enum is read-only")
+            error("Enum is read-only", 2)
+        end,
+
+        __pairs = function()
+            return pairs(values)
         end
     })
 end
 
+
 local function RuleSet(defaults)
+    assert(type(defaults) == "table", "RuleSet expects a table")
+
     return setmetatable(defaults, {
-        __newindex = function()
-            error("Rule set base is read-only")
+        __newindex = function(table, key, _)
+            error("Unknown key '" .. key .. " from rule set " .. table)
         end
     })
 end
 
 local function UnitsConfigSet(defaults)
+    assert(type(defaults) == "table", "UnitsConfigSet expects a table")
+
     return setmetatable(defaults, {
         __newindex = function()
             error("Units config set is read-only")
         end
     })
 end
+
+local function Set(defaults)
+    assert(type(defaults) == "table", "Set expects a table")
+
+    return setmetatable(defaults, {
+        __newindex = function(table, key, _)
+            error("Unknown key '" .. key .. " from set " .. table)
+        end
+    })
+end
+
+
+
+
 
 
 
@@ -72,6 +111,12 @@ UnitCompilationTypes = Enum({
     "Library",
 })
 
+
+
+
+
+
+
 ------------
 -- Config --
 ------------
@@ -81,7 +126,7 @@ UnitCompilationTypes = Enum({
 UnitsConfig = UnitsConfigSet({
     UnitFileName = "${UnitName}.Unit.lua",
 
-    Program = {
+    Program = Set({
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}Module",
         ModuleFileName  = "${ModuleName}.Module.lua",
@@ -99,8 +144,11 @@ UnitsConfig = UnitsConfigSet({
                 bRecursive=true
             }
         }
-    },
-    Engine = {
+
+        -- TODO: Add platform based modules or submodules
+    }),
+
+    Engine = Set({
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
@@ -108,26 +156,38 @@ UnitsConfig = UnitsConfigSet({
         BuildDir = "Build",
         TargetsDir = "Targets",
         SubUnitsDir = {
-            {Dir = "Plugins", UnitType = {"Plugin"}, bRecursive=true}
+            {
+                Dir = "Plugins", 
+                UnitType = {"Plugin"}, 
+                UnitRootName = "${UnitName}",
+                bRecursive=true
+            }
         }
-    },
-    Plugin = {
+    }),
+
+    Plugin = Set({
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
         ModuleClassName = "${ModuleName}Rules",
         BuildDir = "Build",
         SubUnitsDir = {}
-    }
+    })
 })
+
+
+
+
+
+
+
 
 -- Target rules base
 
 local TargetDefaultRules = RuleSet({
-    SupportedPlatforms = "All",
-    OverrideUnitCompilationType = {
+    --OverrideUnitCompilationType = {
         -- e.g. Plugin = UnitCompilationTypes.Library
-    }
+    --}
 })
 
 function TargetRules(default)
@@ -136,10 +196,17 @@ function TargetRules(default)
     })
 end
 
+
+
+
+
+
+
 -- Module rules base
 
 local ModuleDefaultRules = RuleSet({
     CppVersion = DefaultCppVersion,
+    SupportedPlatforms = Platforms.All
 })
 
 function ModuleRules(defaults)
@@ -147,6 +214,13 @@ function ModuleRules(defaults)
         __index = ModuleDefaultRules
     })
 end
+
+
+
+
+
+
+
 
 -- Units rules base
 
@@ -160,16 +234,22 @@ local ProgramDefaultRules = RuleSet({
 local EngineDefaultRules = RuleSet({
     UnitType = "Engine",
     CppVersion = DefaultCppVersion,
-    UnitCompilationType = UnitCompilationTypes.StaticLibrary,
+    UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
     UnitType = "Plugin",
     CppVersion = DefaultCppVersion,
-    UnitCompilationType = UnitCompilationTypes.DynamicLibrary,
+    UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
+
+
+
+
+
+
 
 -- Units creation functions
 
