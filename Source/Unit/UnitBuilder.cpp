@@ -26,18 +26,18 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     // Configuration
 
-    lua.safe_script_file(buildData.configurationFile);
+    lua.safe_script_file(buildData.configurationFile.string());
     ReadConfiguration(lua, buildData);
 
 
     // Unit
 
-    lua.safe_script_file(unitRulesFile);
+    lua.safe_script_file(unitRulesFile.string());
     ReadUnitRules(lua, buildData);
 
     // Target
 
-    lua.safe_script_file(buildTargetFile);
+    lua.safe_script_file(buildTargetFile.string());
     ReadTarget(lua, buildData);
 
     ReadModulesrules(lua, buildData);

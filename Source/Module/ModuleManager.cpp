@@ -26,7 +26,7 @@ ModuleInfo ModuleManager::ResolveModuleInfo(std::string moduleName, IModuleInfoR
 
     try 
     {
-        res = moduleReader.ReadInfo(modulesStructure.at(moduleName).buildRulesFile);
+        res = moduleReader.ReadInfo(modulesStructure.at(moduleName).buildRulesFile.string());
     } 
     catch (std::exception e) 
     {

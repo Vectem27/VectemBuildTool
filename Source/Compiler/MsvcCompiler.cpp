@@ -1,5 +1,5 @@
 #include "MsvcCompiler.h"
 
-#if defined(PLATFORM_WINDOWS)
+#if defined(_WIN32) || defined(_WIN64)
 
 #endif

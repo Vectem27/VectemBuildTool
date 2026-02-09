@@ -19,18 +19,16 @@ add_subdirectory(Source)
 
 # OS
 if(WIN32)
-    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_WINDOWS)
-elseif(APPLE)
-    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_MAC)
+    target_compile_definitions(VectemBuildTool PRIVATE _WIN32)
 elseif(UNIX)
-    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_LINUX)
+    target_compile_definitions(VectemBuildTool PRIVATE __linux__)
 endif()
 
 # Architecture
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_compile_definitions(MultiPlatformExample PRIVATE ARCH_64)
+    target_compile_definitions(VectemBuildTool PRIVATE ARCH_64)
 else()
-    target_compile_definitions(MultiPlatformExample PRIVATE ARCH_32)
+    target_compile_definitions(VectemBuildTool PRIVATE ARCH_32)
 endif()
 
 # Scripts
@@ -47,7 +45,7 @@ set(LIBS_DIR ${CMAKE_SOURCE_DIR}/ThirdParty)
 set(LUA_DIR ${LIBS_DIR}/lua-5.4.8)
 
 if(WIN32)
-    set(LUA_LIB ${LUA_DIR}/lib/lua.lib)
+    set(LUA_LIB ${LUA_DIR}/lib/Debug/lua.lib)
     if(NOT EXISTS ${LUA_LIB})
         message(FATAL_ERROR "Lua library not found: ${LUA_LIB}")
     endif()

@@ -7,3 +7,4 @@ EXECUTABLE_DIR=bin
 #./"$EXECUTABLE" "$@"
 
 ./"$EXECUTABLE_DIR"/"$EXECUTABLE" "$@"
+    

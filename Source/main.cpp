@@ -2,8 +2,7 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
-#include <unistd.h>
-#include <sys/wait.h>
+
 #include <vector>
 
 #include "Compiler/ClangCompiler.h"
@@ -151,8 +150,13 @@ int main(int argc, char* argv[])
             .unitRoot = unitRoot,
             .configurationFile = confFile,
             .buildTarget = buildTarget,
-            .platform  = "Linux"
         };
+
+#if defined(_WIN32)
+        buildData.platform  = "Windows";
+#else
+        buildData.platform  = "Linux";
+#endif
 
         builder.BuildUnit(buildData);
 
