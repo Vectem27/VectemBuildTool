@@ -5,6 +5,7 @@ add_executable(VectemBuildTool
     Module/ModuleManager.cpp
     
     Compiler/ClangCompiler.cpp
+    Compiler/MsvcCompiler.cpp
 
     Unit/UnitBuilder.cpp
     Unit/UnitConfigReader.cpp

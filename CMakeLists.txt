@@ -17,6 +17,22 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 add_subdirectory(Source)
 
+# OS
+if(WIN32)
+    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_WINDOWS)
+elseif(APPLE)
+    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_MAC)
+elseif(UNIX)
+    target_compile_definitions(MultiPlatformExample PRIVATE PLATFORM_LINUX)
+endif()
+
+# Architecture
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    target_compile_definitions(MultiPlatformExample PRIVATE ARCH_64)
+else()
+    target_compile_definitions(MultiPlatformExample PRIVATE ARCH_32)
+endif()
+
 # Scripts
 set(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/Scripts)
 if (EXISTS ${SCRIPT_DIR})
