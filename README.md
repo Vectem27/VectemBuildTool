@@ -17,20 +17,22 @@ All configuration files are written in Lua, allowing dynamic and programmable bu
 
 ## Command Pattern
 
-```bash
-VectemBuildTool --config BuildConfig.lua --project <ProjectDir> --target <TargetName> [options]
+```xml
+VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependency-projects <ProjectRootDir> <UnitName> <UnitType> <Target>...] <ProjectRootDir> <UnitName> <UnitType> <Target>
 ```
+
+Can have multiple --dependency-projects
 
 ### Example: Simple Project
 
 ```bash
-VectemBuildTool --config BuildConfig.lua --project ExampleProject/ --target Test --build-type Release
+VectemBuildTool Project/ Project ProjectUnit Debug
 ```
 
 ### Example: Project with Dependency
 
 ```bash
-VectemBuildTool --config BuildConfig.lua --project Project/ --target Test --dependency-projects Engine/ --dependency-targets Test
+VectemBuildTool --config GlobalBuildConfig.lua --dependency-projects Engine/ Engine EnginUnit Release Project/ Project ProjectUnit Debug
 ```
 
 # Project Structure
