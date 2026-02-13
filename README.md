@@ -217,12 +217,12 @@ Platforms = {
 
 ## Unit Rules Script
 
-The unit rules table name must match the unit name followed by `Unit`.
+The unit rules table name must be the unit name
 
 Required fields:
 
-- `Modules`
-- `SubUnits`
+- `Modules` A map containing the module name as key and a table containing additional data as value
+- `SubUnits` A map containing the unit name as key and a table containing additional data as value
 
 Example:
 

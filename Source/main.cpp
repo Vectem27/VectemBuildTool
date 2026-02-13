@@ -2,18 +2,17 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
-
 #include <vector>
 
-#include "Compiler/ClangCompiler.h"
-
-#include "Unit/UnitBuilder.h"
-
 #include <sol/sol.hpp>
-
 #include <CLI/CLI11.hpp>
 
+#include "Compiler/ClangCompiler.h"
+#include "Unit/UnitBuilder.h"
+
 namespace fs = std::filesystem;
+
+// TODO: Made custom compile command from config file for extensibility)
 
 /**
  * Arg 1 = Module dir
