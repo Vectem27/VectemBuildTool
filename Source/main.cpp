@@ -28,11 +28,13 @@ int main(int argc, char* argv[])
 
     argv = app.ensure_utf8(argv);
 
-    std::string unitName;
     fs::path unitRoot;
+    std::string unitName;
+    std::string unitType;
+    std::string buildTarget;
 
     fs::path confFile;
-    std::string buildTarget;
+    std::string platform;
     
     std::vector<std::string> dependancyProjectsOptRes;
 
@@ -42,12 +44,15 @@ int main(int argc, char* argv[])
 
     /* Positional */
 
-    app.add_option("unit-name", unitName, "Unit name")
-       ->required();
-
     app.add_option("unit-root-path", unitRoot, "Unit root path")
        ->required()
        ->check(CLI::ExistingPath);
+
+    app.add_option("unit-name", unitName, "Unit name")
+       ->required();
+
+    app.add_option("unit-type", unitType, "Unit name")
+       ->required();
 
     app.add_option("build-target", buildTarget, "Target file path")
        ->required();
@@ -55,7 +60,9 @@ int main(int argc, char* argv[])
     /* Optional */
 
     app.add_option("-c, --config", confFile, "Build config file path")
-       ->required()
+       ->check(CLI::ExistingPath);
+
+    app.add_option("-p, --platform", platform, "The build platform")
        ->check(CLI::ExistingPath);
 
     app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-type target-name)")
@@ -132,7 +139,49 @@ int main(int argc, char* argv[])
     }
 
     unitRoot = fs::absolute(unitRoot);
-    confFile = fs::absolute(confFile);
+
+    if (!fs::is_directory(unitRoot))
+    {
+        std::cerr << "Error: Unit root doesn't exists." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    if (confFile.empty())
+    {
+        confFile = unitRoot / "BuildConfig.lua";
+        if (!fs::exists(confFile))
+        {
+            std::cerr << "Error: --config is not set and default config file doesn't exist. (Default config file : " << confFile << ")" << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+    else
+    {
+        confFile = fs::absolute(confFile);
+        if (!fs::exists(confFile))
+        {
+            std::cerr << "Error: Build config file doesn't exist." << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    if (!fs::is_regular_file(confFile))
+    {
+        std::cerr << "Error: Build config path is not a valid file" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // TODO: Check other inputs.
+    // TODO: Check for valide platform
+
+    if(platform.empty())
+    {
+#if defined(_WIN32)
+        platform  = "Windows";
+#else
+        platform  = "Linux";
+#endif
+    }
 
     /////////////////
     /* Run Program */
@@ -145,17 +194,13 @@ int main(int argc, char* argv[])
         UnitBuilder builder = UnitBuilder(compilerFactory);
 
         BuildData buildData {
-            .unitName = unitName,
             .unitRoot = unitRoot,
-            .configurationFile = confFile,
+            .unitName = unitName,
+            .unitType = unitType,
             .buildTarget = buildTarget,
+            .configurationFile = confFile,
+            .platform = platform
         };
-
-#if defined(_WIN32)
-        buildData.platform  = "Windows";
-#else
-        buildData.platform  = "Linux";
-#endif
 
         builder.BuildUnit(buildData);
 

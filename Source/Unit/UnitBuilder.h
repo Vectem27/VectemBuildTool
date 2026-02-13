@@ -12,10 +12,12 @@ class ITargetRulesReader;
 
 struct BuildData
 {
-    std::string unitName;
     std::filesystem::path unitRoot;
-    std::filesystem::path configurationFile;
+    std::string unitName;
+    std::string unitType;
     std::string buildTarget;
+    
+    std::filesystem::path configurationFile;
     std::string platform;
 };
 
