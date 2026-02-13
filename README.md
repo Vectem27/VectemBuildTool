@@ -1,301 +1,308 @@
 # Vectem Build Tool
 
-## Presentation
+## Overview
 
-Vectem build tool is a customisable C++ module based build system.
+Vectem Build Tool is a customizable, module-based C++ build system designed to provide flexible project organization and fine-grained compilation control.
 
-## Use
+It is built around four core concepts:
 
-Pattern command :
+- Targets  
+- Units  
+- Modules  
+- Build Configuration  
+
+All configuration files are written in Lua, allowing dynamic and programmable build logic.
+
+---
+
+# Getting Started
+
+## Command Pattern
 
 ```bash
-VectemBuildTool --config BuildConfig.lua --project ProjectDir/ TargetName --dependancy-project DepProjectDir/ --build-type Debug
+VectemBuildTool --config BuildConfig.lua --project <ProjectDir> --target <TargetName> [options]
 ```
 
-Simple project example :
+### Example: Simple Project
 
 ```bash
 VectemBuildTool --config BuildConfig.lua --project ExampleProject/ --target Test --build-type Release
 ```
 
-Project with engine example :
+### Example: Project with Dependency
 
 ```bash
-VectemBuildTool --config BuildConfig.lua --project Project/ --target Test --dependancy-projects Engine/ --dependancy-targets Test
+VectemBuildTool --config BuildConfig.lua --project Project/ --target Test --dependency-projects Engine/ --dependency-targets Test
 ```
 
-## Project Composition
+---
 
-A project needs 4 types of configuration files :
+# Project Structure
 
-1) The build configuration file
-2) The target rules file
-3) The unit rules files
-4) The modules rules files
+A project requires four types of configuration scripts:
 
-These files are lua scripts, so dynamic data can be set.
-Script can communicate, indeed build configuration script and target rules script are executed before every unit rules script and module rules scripts.
-Note : the unit rules script is executed before every module rules sripts too.
+1. Build Configuration Script  
+2. Target Rules Script  
+3. Unit Rules Script  
+4. Module Rules Script  
 
-A lot of project properties might be cutomised like folder structure or some rules scripts syntaxe.
+All scripts are Lua files and are executed in the following order:
 
-### Modules
+1. Build configuration script  
+2. Target rules script  
+3. Unit rules script  
+4. Module rules script  
 
-Module is a code container, modules can have dependancies with other module.
-Modules can override some compilation rules, so some modules can be compiled with different optimisation levels or with different language versions.
+Unit rules are executed before module rules.
 
-A module can't be compiled alone, they needs to be compiled in a [unit](#units).
+The system is highly customizable. You can modify folder structures, naming conventions, and rule behaviors.
 
-### Units
+---
 
-'Units' or 'build units' contains [modules](#modules).
-The unit can be compiled alone as a library or executable.
-A unit can contains sub-units according to the [configuration file](#build-confuguration), for example your project plugins can be sub-units.
+# Core Concepts
 
-Units can have dependancies with other units or sub-units.
+## Modules
 
-Separate units dependancies are gave in the build command and should be compiled separately, them build rules and them config can be different as the project.using them.
+A module is a code container.
 
-Sub-units can be compile with the main unit (optional).
+- Modules can depend on other modules.
+- Modules may override compilation settings such as optimization level or language version.
+- A module cannot be compiled alone; it must belong to a unit.
 
-### Target
+---
 
-A project can required different target (e.g. Release, Debug).
-Target can change build rules and compilation options.
-Most of these rules can be overrided for single modules.
+## Units
 
-Sub-units share the same target as the main one.
+Units (or build units) contain modules.
 
-### Build Configuration {#build-confuguration}
+A unit can be compiled as:
+- An executable
+- A static library
+- A dynamic library
 
-The build configuration define units structure and some units rules.
-It defines possible units types, them folder structure, them sub-units and some defaults rules.
+Units may contain sub-units depending on the build configuration.
 
-## Scripts
+Units can depend on other units.
 
-Every scripts should contains specific lua tables with some required fields.
+External unit dependencies are specified in the build command and are compiled separately. Their configuration may differ from the main project.
 
-### Build Configuration Script {#build-confuguration-script}
+Sub-units can optionally be built together with the main unit.
 
-By default, the build will use the file named 'BuildConfig.lua' located at the project root.
-If this file doesn't exist, the internal config script will be used.
-You can the command option '--config' to use an other config file.
+---
 
-The build configuration script can define some functions and utilities for every rules scripts.
-However, it must define a table named 'UnitsConfig' used to define the project structure.
+## Targets
 
-The table 'UnitsConfig' contains units rules.
-To define a unit rule, add an table field named as the unit type name.
+A project may define multiple targets (e.g., Debug, Release).
 
-The unit table should contains some fields :
+Targets define:
+- Compilation options
+- Optimization level
+- Debug information
+- Platform support
 
-- 'ModulesDir' an array containing relatives directory names. (Can't be empty)
-- 'ModuleRootName'  The module root directory name.
-- 'ModuleFileName'  The module rules script file name.
-- 'ModuleClassName' The module rules script table name.
-- 'BuildDir' The unit build directory. (relative to the unit root).
-- 'SubUnits' The sub-units config table. (Can be empty)
+Modules may override some target settings.
 
-For 'ModuleRootName', 'ModuleFileName' and 'ModuleClassName' you can add the macro '${ModuleName}' in the string, it will be replaced by the module name.
+Sub-units always use the same target as their parent unit.
 
-'SubUnits' is an array containing tables, this table required these fields :
+---
 
-- 'Dir' The sub-units dir
-- 'bRecursive'   A boolean, if true search units recursively inside the dir.
-- 'UnitType' The units types
-- 'UnitRootName' The unit root dir name
-- 'UnitFileName' The unit script file name dir
+# Build Configuration Script
 
-For 'UnitRootName' and 'UnitFileName' you can add the macro '${UnitName}' in the string, it will be replaced by the sub-unit name.
+By default, the build system uses:
 
-Non sub-units require some other fields :
-
-- 'TargetsDir' The targets directory.
-- 'TargetFileName'  The target rules script file name.
-- 'TargetClassName' The target rules script table name.
-
-For 'TargetFileName' and 'TargetClassName' you can add the macro '${TargetName}' in the string, it will be replaced by the target name.
-
-Example :
-
-```lua
-UnitsConfig = {
-    Program = {
-        ModulesDir      = { "Modules" },
-        ModuleRootName  = "${ModuleName}Module",
-        ModuleFileName  = "${ModuleName}.Module.lua",
-        ModuleClassName = "${ModuleName}Rules", -- Not implemented
-
-        TargetsDir = "Targets",
-        TargetFileName  = "${TargetName}.Target.lua",
-        TargetClassName = "${TargetName}TagetRules",
-
-        BuildDir = "Build",
-
-        SubUnits = {
-            {
-                Dir = "Plugins",
-                UnitType = "Plugin",
-                UnitRootName = "${UnitName}",
-                UnitFileName = "${UnitName}.Plugin.lua",
-                bRecursive=true
-            }
-        }
-    },
-
-    Plugin = {
-        ModulesDir      = { "Modules" },
-        ModuleRootName  = "${ModuleName}",
-        ModuleFileName  = "${ModuleName.Build.lua}",
-        ModuleClassName = "${ModuleName}Rules",
-
-        BuildDir = "Build",
-        
-        SubUnits = {}
-    }
-}
+```
+BuildConfig.lua
 ```
 
-### Target Rules Script {#target-rules-script}
+located at the project root.
 
-The target table name is defined in the unit config.
-Inside this table some fields are required :
+You can override it using:
 
-- 'bAddDebugInfo' Boolean defining if we should compile with debug info.
-- 'CVersion' A string representing the C version.
-- 'CppVersion' A string representing the c++ version.
-- 'SupportedPlatforms' Enum flag (int).
-- 'OptimisationType' A string representing the optimisation type.
-- 'FloatingPointType' The floating point optimisation type.
+```
+--config
+```
 
-CVersion values : 
+The script must define a table named:
 
-- "ANSI" or "C90"
-- "C99"
-- "C11"
-- "C17"
-- "C23"
+```
+UnitsConfig
+```
 
-CppVersion values : 
+`UnitsConfig` defines unit types and their structure.
 
-- "C++98"
-- "C++03"
-- "C++11"
-- "C++14"
-- "C++17"
-- "C++20"
-- "C++23"
-- "C++26"
+---
 
-SupportedPlatforms values :
+## Unit Type Fields
 
-- Windows = 1
-- MacOS   = 2
-- Linux   = 3
-- Android = 4
-- IOS     = 5
-- FreeBSD = 16
-- OpenBSD = 17
+Each unit type must define:
 
-OptimisationType values :
+- `ModulesDir` (array, cannot be empty)
+- `ModuleRootName`
+- `ModuleFileName`
+- `ModuleClassName`
+- `BuildDir`
+- `SubUnits` (array, can be empty)
 
-- "None"
-- "Standard"
-- "Agressive"
-- "Fast"
-- "MinSize"
+Supported macro:
+- `${ModuleName}`
 
-FloatingPointType values :
+---
 
-- "Strict" Keep strict IEEE-754
-- "Precise" Optimised but safe
-- "Fast" Best optimisation level but less safe
+## SubUnits Fields
 
-Example : 
+Each sub-unit entry must define:
+
+- `Dir`
+- `bRecursive`
+- `UnitType`
+- `UnitRootName`
+- `UnitFileName`
+
+Supported macro:
+- `${UnitName}`
+
+---
+
+## Additional Fields for Root Units
+
+- `TargetsDir`
+- `TargetFileName`
+- `TargetClassName`
+
+Supported macro:
+- `${TargetName}`
+
+---
+
+# Target Rules Script
+
+A target rules script must define:
+
+- `bAddDebugInfo`
+- `CVersion`
+- `CppVersion`
+- `SupportedPlatforms`
+- `OptimisationType`
+- `FloatingPointType`
+
+---
+
+## Supported C Versions
+
+- C90
+- C99
+- C11
+- C17
+- C23
+
+---
+
+## Supported C++ Versions
+
+- C++98
+- C++03
+- C++11
+- C++14
+- C++17
+- C++20
+- C++23
+- C++26
+
+---
+
+## Supported Platforms (Enum Flags)
+
 ```lua
 Platforms = {
     Windows = 1,
-    Linux = 3,
-    All = 0xFF
-}
-
-ReleaseTarget = {
-    bAddDebugInfo = false,
-    CVersion = "C17",
-    CppVersion = "C++20",
-    SupportedPlatforms = Platforms.Windows | Platforms.Linux,
-    OptimisationType = "Fast",
-    FloatingPointType = "Precise"
+    MacOS   = 2,
+    Linux   = 4,
+    Android = 8,
+    IOS     = 16,
+    FreeBSD = 32,
+    OpenBSD = 64,
+    All     = 0xFF
 }
 ```
 
-### Unit Rules Script {#unit-rules-script}
+---
 
-The unit table name is the unit name collapsed to "Unit"
-The unit rules table require these fields :
+## Optimisation Types
 
-- 'Modules' An array containing tables with module name as field name and a table as value for modules additional rules.
-- 'SubUnits' An array containing tables with unit name as field name as value for sub-units additional rules.
+- None
+- Standard
+- Aggressive
+- Fast
+- MinSize
 
-Modules table additional rules fiels :
+---
 
-- None for now.
+## Floating Point Types
 
-SubUnits table additional rules fiels :
+- Strict   (Strict IEEE-754 compliance)
+- Precise  (Optimized but safe)
+- Fast     (Maximum optimization, reduced precision guarantees)
 
-- None for now.
+---
 
-Example :
+# Unit Rules Script
+
+The unit rules table name must match the unit name followed by `Unit`.
+
+Required fields:
+
+- `Modules`
+- `SubUnits`
+
+Example:
+
 ```lua
 ProjectUnit = {
     Modules = {
-        ModuleTest = {
-            -- Module additional data
-        },
-        ModuleTest2 = {
-            -- Module additional data
-        }
+        Core = {},
+        Renderer = {}
     },
     SubUnits = {
-        PluginTest = {
-            -- Unit additional data
-        },
-        PluginTest2 = {
-            -- Unit additional data
-        }
+        Editor = {}
     }
 }
 ```
 
-### Module Rules Script {#module-rules-script}
+---
 
-Module rules table name is defined in the configuration file.
-This table require :
+# Module Rules Script
 
-- 'LinkingType' The module linking type.
-- 'PublicIncludeDirectories' An array containing the public include directories.
-- 'PrivateIncludeDirectories' An array containing the private include directories.
-- 'PublicDependancies' An array containing the modules public dependancies.
-- 'PrivateDependancies' An array containing the modules public dependancies.
+A module rules script must define:
 
-Note : the module root is always a private include dir.
+- `LinkingType`
+- `PublicIncludeDirectories`
+- `PrivateIncludeDirectories`
+- `PublicDependencies`
+- `PrivateDependencies`
 
+Note:
+The module root directory is always added as a private include directory.
 
-LinkingType values :
+---
 
-- "Static" Link as static library
-- "Dynamic" Link as a dynamic library
-- "DynamicLoading" Don't link, load dynamically
+## Linking Types
 
-Exemple :
+- Static
+- Dynamic
+- DynamicLoading
+
+---
+
+## Example
+
 ```lua
-Module = {
-    PublicIncludeDirectories = {"Public", "Interface"},
-    PrivateIncludeDirectories = {"Public", "Interface"},
+CoreRules = {
+    PublicIncludeDirectories = { "Public", "Interface" },
+    PrivateIncludeDirectories = { "Private" },
 
-    PublicDependancies = {"TestModule", "TestModule2"},
-    PrivateDependancies = {"TestModule3"},
-    
+    PublicDependencies = { "Utils" },
+    PrivateDependencies = { "InternalHelpers" },
+
     LinkingType = "Static"
 }
 ```
