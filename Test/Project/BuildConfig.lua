@@ -162,10 +162,10 @@ UnitsConfig = UnitsConfigSet({
 
         BuildDir = "Build",
 
-        SubUnitsDir = {
+        SubUnits = {
             {
                 Dir = "Plugins", 
-                UnitType = {"Plugin"}, 
+                UnitType = "Plugin", 
                 UnitRootName = "${UnitName}",
                 bRecursive=true
             }
@@ -178,7 +178,7 @@ UnitsConfig = UnitsConfigSet({
         ModuleFileName  = "${ModuleName.Build.lua}",
         ModuleClassName = "${ModuleName}Rules",
         BuildDir = "Build",
-        SubUnitsDir = {}
+        SubUnits = {}
     })
 })
 
