@@ -13,8 +13,6 @@ It is built around four core concepts:
 
 All configuration files are written in Lua, allowing dynamic and programmable build logic.
 
----
-
 # Getting Started
 
 ## Command Pattern
@@ -34,8 +32,6 @@ VectemBuildTool --config BuildConfig.lua --project ExampleProject/ --target Test
 ```bash
 VectemBuildTool --config BuildConfig.lua --project Project/ --target Test --dependency-projects Engine/ --dependency-targets Test
 ```
-
----
 
 # Project Structure
 
@@ -57,8 +53,6 @@ Unit rules are executed before module rules.
 
 The system is highly customizable. You can modify folder structures, naming conventions, and rule behaviors.
 
----
-
 # Core Concepts
 
 ## Modules
@@ -68,8 +62,6 @@ A module is a code container.
 - Modules can depend on other modules.
 - Modules may override compilation settings such as optimization level or language version.
 - A module cannot be compiled alone; it must belong to a unit.
-
----
 
 ## Units
 
@@ -88,8 +80,6 @@ External unit dependencies are specified in the build command and are compiled s
 
 Sub-units can optionally be built together with the main unit.
 
----
-
 ## Targets
 
 A project may define multiple targets (e.g., Debug, Release).
@@ -104,9 +94,9 @@ Modules may override some target settings.
 
 Sub-units always use the same target as their parent unit.
 
----
+# Scripts
 
-# Build Configuration Script
+## Build Configuration Script
 
 By default, the build system uses:
 
@@ -130,9 +120,7 @@ UnitsConfig
 
 `UnitsConfig` defines unit types and their structure.
 
----
-
-## Unit Type Fields
+### Unit Type Fields
 
 Each unit type must define:
 
@@ -146,9 +134,7 @@ Each unit type must define:
 Supported macro:
 - `${ModuleName}`
 
----
-
-## SubUnits Fields
+### SubUnits Fields
 
 Each sub-unit entry must define:
 
@@ -161,9 +147,7 @@ Each sub-unit entry must define:
 Supported macro:
 - `${UnitName}`
 
----
-
-## Additional Fields for Root Units
+### Additional Fields for Root Units
 
 - `TargetsDir`
 - `TargetFileName`
@@ -172,9 +156,7 @@ Supported macro:
 Supported macro:
 - `${TargetName}`
 
----
-
-# Target Rules Script
+## Target Rules Script
 
 A target rules script must define:
 
@@ -185,9 +167,7 @@ A target rules script must define:
 - `OptimisationType`
 - `FloatingPointType`
 
----
-
-## Supported C Versions
+### Supported C Versions
 
 - C90
 - C99
@@ -195,9 +175,7 @@ A target rules script must define:
 - C17
 - C23
 
----
-
-## Supported C++ Versions
+### Supported C++ Versions
 
 - C++98
 - C++03
@@ -208,9 +186,7 @@ A target rules script must define:
 - C++23
 - C++26
 
----
-
-## Supported Platforms (Enum Flags)
+### Supported Platforms (Enum Flags)
 
 ```lua
 Platforms = {
@@ -225,9 +201,7 @@ Platforms = {
 }
 ```
 
----
-
-## Optimisation Types
+### Optimisation Types
 
 - None
 - Standard
@@ -235,17 +209,13 @@ Platforms = {
 - Fast
 - MinSize
 
----
-
-## Floating Point Types
+### Floating Point Types
 
 - Strict   (Strict IEEE-754 compliance)
 - Precise  (Optimized but safe)
 - Fast     (Maximum optimization, reduced precision guarantees)
 
----
-
-# Unit Rules Script
+## Unit Rules Script
 
 The unit rules table name must match the unit name followed by `Unit`.
 
@@ -268,9 +238,7 @@ ProjectUnit = {
 }
 ```
 
----
-
-# Module Rules Script
+## Module Rules Script
 
 A module rules script must define:
 
@@ -283,17 +251,13 @@ A module rules script must define:
 Note:
 The module root directory is always added as a private include directory.
 
----
-
-## Linking Types
+### Linking Types
 
 - Static
 - Dynamic
 - DynamicLoading
 
----
-
-## Example
+### Example
 
 ```lua
 CoreRules = {
