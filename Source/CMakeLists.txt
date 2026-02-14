@@ -8,8 +8,9 @@ add_executable(VectemBuildTool
     Compiler/MsvcCompiler.cpp
 
     Unit/UnitBuilder.cpp
-    Unit/UnitConfigReader.cpp
     Unit/UnitRulesReader.cpp
+
+    BuildConfig/BuildConfigReader.cpp
 
     Target/TargetRulesReader.cpp
 )

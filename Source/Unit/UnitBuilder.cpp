@@ -9,7 +9,7 @@
 #include "Compiler/ICompiler.h"
 #include "Module/IModuleInfoReader.h"
 #include "Module/IModuleManager.h"
-#include "UnitConfigReader.h"
+#include "BuildConfig/BuildConfigReader.h"
 #include "UnitRulesReader.h"
 
 #include "Target/TargetRulesReader.h"
@@ -25,25 +25,20 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     lua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
 
     // Configuration
-
     lua.safe_script_file(buildData.configurationFile.string());
     ReadConfiguration(lua, buildData);
 
-
     // Unit
-
     lua.safe_script_file(unitRulesFile.string());
     ReadUnitRules(lua, buildData);
 
     // Target
-
     lua.safe_script_file(buildTargetFile.string());
     ReadTarget(lua, buildData);
 
     ReadModulesrules(lua, buildData);
 
     fs::create_directories(buildOutput);
-
 
     // Start compilation
 
@@ -144,9 +139,9 @@ void UnitBuilder::ReadConfiguration(sol::state& luaState, const BuildData& build
 {
     std::cout << buildData.unitName << std::endl;
 
-    IUnitConfigReader* unitConfigReader = new UnitConfigReader(luaState);
-    unitsConfigs = unitConfigReader->ReadUnitsConfig(buildData.unitRoot);
-    delete unitConfigReader;
+    IBuildConfigReader* buildConfigReader = new BuildConfigReader(luaState);
+    unitsConfigs = buildConfigReader->ReadUnitsConfig(buildData.unitRoot);
+    delete buildConfigReader;
 
  
     std::string unitFileName = unitsConfigs.UnitFileName;
