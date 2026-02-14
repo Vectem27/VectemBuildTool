@@ -6,16 +6,16 @@ Vectem Build Tool is a customizable, module-based C++ build system designed to p
 
 It is built around four core concepts:
 
-- Targets  
-- Units  
-- Modules  
-- Build Configuration  
+- [Targets](#targets)
+- [Units](#units)
+- [Modules](#modules)
+- [Build Configuration](#build-configuration)
 
 All configuration files are written in Lua, allowing dynamic and programmable build logic.
 
-# Getting Started
+## Getting Started
 
-## Command Pattern
+#### Command Pattern
 
 ```xml
 VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependency-projects <ProjectRootDir> <UnitName> <UnitType> <Target>...] <ProjectRootDir> <UnitName> <UnitType> <Target>
@@ -23,19 +23,21 @@ VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependen
 
 Can have multiple --dependency-projects
 
-### Example: Simple Project
+###### Example: Simple Project
 
 ```bash
 VectemBuildTool Project/ Project ProjectUnit Debug
 ```
 
-### Example: Project with Dependency
+###### Example: Project with Dependency
 
 ```bash
 VectemBuildTool --config GlobalBuildConfig.lua --dependency-projects Engine/ Engine EnginUnit Release Project/ Project ProjectUnit Debug
 ```
 
-# Project Structure
+---
+
+## Project Structure
 
 A project requires four types of configuration scripts:
 
@@ -55,9 +57,11 @@ Unit rules are executed before module rules.
 
 The system is highly customizable. You can modify folder structures, naming conventions, and rule behaviors.
 
-# Core Concepts
+---
 
-## Modules
+## Core Concepts
+
+#### Modules
 
 A module is a code container.
 
@@ -65,7 +69,7 @@ A module is a code container.
 - Modules may override compilation settings such as optimization level or language version.
 - A module cannot be compiled alone; it must belong to a unit.
 
-## Units
+#### Units
 
 Units (or build units) contain modules.
 
@@ -82,7 +86,7 @@ External unit dependencies are specified in the build command and are compiled s
 
 Sub-units can optionally be built together with the main unit.
 
-## Targets
+#### Targets
 
 A project may define multiple targets (e.g., Debug, Release).
 
@@ -96,9 +100,23 @@ Modules may override some target settings.
 
 Sub-units always use the same target as their parent unit.
 
-# Scripts
+#### Build Configuration
 
-## Build Configuration Script
+The build configuration define units structure and some units rules. 
+It defines possible units types, them folder structure, them sub-units and some defaults rules.
+
+---
+
+## Scripts
+
+See 
+
+- [Build Configuration Script](#config-script)
+- [Target Rules Script](#target-script)
+- [Unit Rules Script](#unit-script)
+- [Module Rules Script](#module-script)
+
+#### Build Configuration Script {#config-script}
 
 By default, the build system uses:
 
@@ -122,43 +140,79 @@ UnitsConfig
 
 `UnitsConfig` defines unit types and their structure.
 
-### Unit Type Fields
+###### Unit Type Fields
 
 Each unit type must define:
 
-- `ModulesDir` (array, cannot be empty)
-- `ModuleRootName`
-- `ModuleFileName`
-- `ModuleClassName`
-- `BuildDir`
+- `ModulesDirs` (array, cannot be empty)
+- `ModuleRootName` The module root folder name.
+- `ModuleFileName` The module rules script file name.
+- `ModuleClassName` The modules rules table name.
+- `BuildDir` The output build directory.
 - `SubUnits` (array, can be empty)
 
 Supported macro:
-- `${ModuleName}`
+- `${ModuleName}` (For `ModuleRootName`, `ModuleFileName` and `ModuleClassName`.)
 
-### SubUnits Fields
+###### SubUnits Fields
 
 Each sub-unit entry must define:
 
-- `Dir`
-- `bRecursive`
-- `UnitType`
-- `UnitRootName`
-- `UnitFileName`
+- `Dir` The directory containing these sub-units.
+- `bRecursive` Boolean, recursive path search.
+- `UnitType` The unit type.
+- `UnitRootName` The unit root folder name.
+- `UnitFileName` The unit rules script file name.
 
 Supported macro:
-- `${UnitName}`
+- `${UnitName}` (For `UnitRootName` and `UnitFileName`)
 
-### Additional Fields for Root Units
+###### Additional Fields for Root Units
 
-- `TargetsDir`
-- `TargetFileName`
-- `TargetClassName`
+- `TargetsDir` The target rules directory.
+- `TargetFileName` The target rules script file name.
+- `TargetClassName` The target rules table name.
 
 Supported macro:
-- `${TargetName}`
+- `${TargetName}` (For `TargetFileName` and `TargetClassName`.)
 
-## Target Rules Script
+###### Example
+
+```lua 
+UnitsConfig = { 
+    Program = { 
+        ModulesDir = { "Modules" }, 
+        ModuleRootName = "${ModuleName}Module", 
+        ModuleFileName = "${ModuleName}.Module.lua", 
+        ModuleClassName = "${ModuleName}Rules",
+        TargetsDir = "Targets", 
+        TargetFileName = "${TargetName}.Target.lua", 
+        TargetClassName = "${TargetName}TagetRules", 
+        BuildDir = "Build", 
+        SubUnits = { 
+            { 
+                Dir = "Plugins", 
+                UnitType = "Plugin", 
+                UnitRootName = "${UnitName}", 
+                UnitFileName = "${UnitName}.Plugin.lua", 
+                bRecursive=true 
+            } 
+        } 
+    },
+    Plugin = { 
+        ModulesDir = { "Modules" }, 
+        ModuleRootName = "${ModuleName}", 
+        ModuleFileName = "${ModuleName.Build.lua}", 
+        ModuleClassName = "${ModuleName}Rules", 
+        BuildDir = "Build", 
+        SubUnits = {} 
+    } 
+}
+```
+
+---
+
+#### Target Rules Script {#target-script}
 
 A target rules script must define:
 
@@ -169,7 +223,7 @@ A target rules script must define:
 - `OptimisationType`
 - `FloatingPointType`
 
-### Supported C Versions
+###### Supported C Versions
 
 - C90
 - C99
@@ -177,7 +231,7 @@ A target rules script must define:
 - C17
 - C23
 
-### Supported C++ Versions
+###### Supported C++ Versions
 
 - C++98
 - C++03
@@ -188,7 +242,9 @@ A target rules script must define:
 - C++23
 - C++26
 
-### Supported Platforms (Enum Flags)
+###### Supported Platforms (Enum Flags)
+
+Lua code :
 
 ```lua
 Platforms = {
@@ -199,11 +255,12 @@ Platforms = {
     IOS     = 16,
     FreeBSD = 32,
     OpenBSD = 64,
+    NetBSD = 128,
     All     = 0xFF
 }
 ```
 
-### Optimisation Types
+###### Optimisation Types
 
 - None
 - Standard
@@ -211,13 +268,28 @@ Platforms = {
 - Fast
 - MinSize
 
-### Floating Point Types
+###### Floating Point Types
 
 - Strict   (Strict IEEE-754 compliance)
 - Precise  (Optimized but safe)
 - Fast     (Maximum optimization, reduced precision guarantees)
 
-## Unit Rules Script
+###### Example
+
+```lua
+ReleaseTarget = { 
+    bAddDebugInfo = false, 
+    CVersion = "C17", 
+    CppVersion = "C++20", 
+    SupportedPlatforms = Platforms.Windows | Platforms.Linux, 
+    OptimisationType = "Fast", 
+    FloatingPointType = "Precise" 
+}
+```
+
+---
+
+#### Unit Rules Script {#unit-script}
 
 The unit rules table name must be the unit name
 
@@ -226,43 +298,54 @@ Required fields:
 - `Modules` A map containing the module name as key and a table containing additional data as value
 - `SubUnits` A map containing the unit name as key and a table containing additional data as value
 
-Example:
+###### Example
 
 ```lua
-ProjectUnit = {
-    Modules = {
-        Core = {},
-        Renderer = {}
-    },
-    SubUnits = {
-        Editor = {}
-    }
+ProjectUnit = { 
+    Modules = { 
+        ModuleTest = { 
+            -- Module additional data
+        }, 
+        ModuleTest2 = { 
+            -- Module additional data 
+        } 
+    }, 
+    SubUnits = { 
+        PluginTest = { 
+            -- Unit additional data
+        },
+        PluginTest2 = { 
+            -- Unit additional data 
+        } 
+    } 
 }
 ```
 
-## Module Rules Script
+---
+
+#### Module Rules Script {#module-script}
 
 A module rules script must define:
 
 - `LinkingType`
 - `PublicIncludeDirectories`
 - `PrivateIncludeDirectories`
-- `PublicDependencies`
-- `PrivateDependencies`
+- `PublicModuleDependencies`
+- `PrivateModuleDependencies`
 
 Note:
 The module root directory is always added as a private include directory.
 
-### Linking Types
+###### Linking Types
 
 - Static
 - Dynamic
 - DynamicLoading
 
-### Example
+###### Example
 
 ```lua
-CoreRules = {
+ModuleRules = {
     PublicIncludeDirectories = { "Public", "Interface" },
     PrivateIncludeDirectories = { "Private" },
 
@@ -272,3 +355,5 @@ CoreRules = {
     LinkingType = "Static"
 }
 ```
+
+---
