@@ -6,6 +6,7 @@
 #include "../Compiler/ICompiler.h"
 #include "Target/Target.h"
 #include "Unit/Unit.h"
+#include "BuildConfig/BuildConfig.h"
 #include "Unit/UnitRulesReader.h"
 
 class ITargetRulesReader;
@@ -80,8 +81,8 @@ protected:
 private:
     const ICompilerFactory& compilerFactory;
 
-    UnitsConfig unitsConfigs;
-    UnitInfo unitConfig;
+    BuildConfig unitsConfigs;
+    UnitConfig unitConfig;
 
     std::filesystem::path unitRulesFile;
     std::filesystem::path buildTargetFile;

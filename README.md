@@ -116,7 +116,7 @@ See
 - [Unit Rules Script](#unit-script)
 - [Module Rules Script](#module-script)
 
-#### Build Configuration Script {#config-script}
+### Build Configuration Script {#config-script}
 
 By default, the build system uses:
 
@@ -135,15 +135,16 @@ You can override it using:
 The script must define a table named:
 
 ```
-UnitsConfig
+BuildConfig
 ```
 
-`UnitsConfig` defines unit types and their structure.
+`BuildConfig` defines unit types and their structure.
 
-###### Unit Type Fields
+##### Unit Type Fields
 
 Each unit type must define:
 
+- `UnitFileName` The unit file name.
 - `ModulesDirs` (array, cannot be empty)
 - `ModuleRootName` The module root folder name.
 - `ModuleFileName` The module rules script file name.
@@ -152,9 +153,11 @@ Each unit type must define:
 - `SubUnits` (array, can be empty)
 
 Supported macro:
-- `${ModuleName}` (For `ModuleRootName`, `ModuleFileName` and `ModuleClassName`.)
 
-###### SubUnits Fields
+- `${ModuleName}` (For `ModuleRootName`, `ModuleFileName` and `ModuleClassName`.)
+- `${UnitName}` (For `UnitFileName`.)
+
+##### SubUnits Fields
 
 Each sub-unit entry must define:
 
@@ -167,7 +170,7 @@ Each sub-unit entry must define:
 Supported macro:
 - `${UnitName}` (For `UnitRootName` and `UnitFileName`)
 
-###### Additional Fields for Root Units
+##### Additional Fields for Root Units
 
 - `TargetsDir` The target rules directory.
 - `TargetFileName` The target rules script file name.
@@ -176,10 +179,10 @@ Supported macro:
 Supported macro:
 - `${TargetName}` (For `TargetFileName` and `TargetClassName`.)
 
-###### Example
+#### Example
 
 ```lua 
-UnitsConfig = { 
+BuildConfig = { 
     Program = { 
         ModulesDir = { "Modules" }, 
         ModuleRootName = "${ModuleName}Module", 
@@ -212,7 +215,7 @@ UnitsConfig = {
 
 ---
 
-#### Target Rules Script {#target-script}
+### Target Rules Script {#target-script}
 
 A target rules script must define:
 
@@ -223,7 +226,7 @@ A target rules script must define:
 - `OptimisationType`
 - `FloatingPointType`
 
-###### Supported C Versions
+#### Supported C Versions
 
 - C90
 - C99
@@ -231,8 +234,7 @@ A target rules script must define:
 - C17
 - C23
 
-###### Supported C++ Versions
-
+#### Supported C++ Versions
 - C++98
 - C++03
 - C++11
@@ -242,7 +244,7 @@ A target rules script must define:
 - C++23
 - C++26
 
-###### Supported Platforms (Enum Flags)
+#### Supported Platforms (Enum Flags)
 
 Lua code :
 
@@ -260,7 +262,7 @@ Platforms = {
 }
 ```
 
-###### Optimisation Types
+#### Optimisation Types
 
 - None
 - Standard
@@ -268,13 +270,13 @@ Platforms = {
 - Fast
 - MinSize
 
-###### Floating Point Types
+#### Floating Point Types
 
 - Strict   (Strict IEEE-754 compliance)
 - Precise  (Optimized but safe)
 - Fast     (Maximum optimization, reduced precision guarantees)
 
-###### Example
+#### Example
 
 ```lua
 ReleaseTarget = { 
@@ -289,7 +291,7 @@ ReleaseTarget = {
 
 ---
 
-#### Unit Rules Script {#unit-script}
+### Unit Rules Script {#unit-script}
 
 The unit rules table name must be the unit name
 
@@ -298,7 +300,7 @@ Required fields:
 - `Modules` A map containing the module name as key and a table containing additional data as value
 - `SubUnits` A map containing the unit name as key and a table containing additional data as value
 
-###### Example
+#### Example
 
 ```lua
 ProjectUnit = { 
@@ -323,7 +325,7 @@ ProjectUnit = {
 
 ---
 
-#### Module Rules Script {#module-script}
+### Module Rules Script {#module-script}
 
 A module rules script must define:
 
@@ -336,13 +338,13 @@ A module rules script must define:
 Note:
 The module root directory is always added as a private include directory.
 
-###### Linking Types
+#### Linking Types
 
 - Static
 - Dynamic
 - DynamicLoading
 
-###### Example
+#### Example
 
 ```lua
 ModuleRules = {

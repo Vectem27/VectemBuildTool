@@ -18,12 +18,6 @@ UnitRules UnitRulesReader::ReadUnitsRules(std::string unitName) const
 
         res.name = unitName;
 
-        sol::optional<std::string> unitTypeField =
-            unitRules["UnitType"].get<sol::optional<std::string>>();
-        if (!unitTypeField)
-            throw UnitRulesReaderException("Unit rule 'UnitType' is missing for '" + unitName + "'.");
-        res.type = unitTypeField.value();
-
         sol::table modules = unitRules["Modules"];
         if (!modules.valid())
             throw UnitRulesReaderException("Unit modules field is missing for : '" + unitName + "'.");

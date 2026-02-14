@@ -140,13 +140,28 @@ void UnitBuilder::ReadConfiguration(sol::state& luaState, const BuildData& build
     std::cout << buildData.unitName << std::endl;
 
     IBuildConfigReader* buildConfigReader = new BuildConfigReader(luaState);
-    unitsConfigs = buildConfigReader->ReadUnitsConfig(buildData.unitRoot);
+    unitsConfigs = buildConfigReader->ReadBuildConfig(buildData.unitRoot);
     delete buildConfigReader;
 
- 
-    std::string unitFileName = unitsConfigs.UnitFileName;
+    // Config Unit
+    for (const auto& unit : unitsConfigs.unitsInfo)
+    {
+        if (unit.type != buildData.unitType)
+            continue;
+
+        unitConfig = unit;
+        break;
+    }
+
+    if (unitConfig.type.empty())
+        throw UnitBuilderException("No config set for unit type : '" + unitConfig.type + "'.");
+
+    std::string unitFileName = unitConfig.unitFileName;
     unitFileName = std::regex_replace(unitFileName, std::regex(R"(\$\{UnitName\})"), buildData.unitName);
     unitRulesFile = buildData.unitRoot / unitFileName;
+
+    if (!std::filesystem::exists(unitRulesFile) || !std::filesystem::is_regular_file(unitRulesFile))
+        throw UnitBuilderException("Unit rules file does not exist for the config unit : '" + unitConfig.type + "'.");
 }
 
 void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData) 
@@ -155,22 +170,7 @@ void UnitBuilder::ReadUnitRules(sol::state& luaState, const BuildData& buildData
     unitRules = unitRulesReader->ReadUnitsRules(buildData.unitName);
     delete unitRulesReader;
 
-    // Config Unit
-    for (const auto& unit : unitsConfigs.unitsInfo)
-    {
-        if (unit.name != unitRules.type)
-            continue;
-
-        unitConfig = unit;
-
-        break;
-    }
-
-    if (!std::filesystem::exists(unitRulesFile) && std::filesystem::is_regular_file(unitRulesFile))
-        throw UnitBuilderException("Unit rules file does not exist for the config unit : '" + unitConfig.name + "'.");
-
     buildOutput = buildData.unitRoot / unitConfig.buildDir / buildData.platform / buildData.buildTarget;
-
 
     if(!unitConfig.targetFileName.empty())
     {
@@ -193,7 +193,7 @@ void UnitBuilder::ReadTarget(sol::state& luaState, const BuildData& buildData)
 void UnitBuilder::ReadModulesrules(sol::state& luaState, const BuildData& buildData) 
 {
     if (unitConfig.modulesDirs.empty())
-        throw UnitBuilderException("Module dir is empty for the config unit : '" + unitConfig.name + "'.");
+        throw UnitBuilderException("Module dir is empty for the config unit : '" + unitConfig.type + "'.");
 
     for (const auto& moduleDir : unitConfig.modulesDirs)
         modulesDirs.emplace_back(buildData.unitRoot / moduleDir);

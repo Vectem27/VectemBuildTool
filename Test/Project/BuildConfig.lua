@@ -67,8 +67,8 @@ local function RuleSet(defaults)
     })
 end
 
-local function UnitsConfigSet(defaults)
-    assert(type(defaults) == "table", "UnitsConfigSet expects a table")
+local function BuildConfigSet(defaults)
+    assert(type(defaults) == "table", "BuildConfigSet expects a table")
 
     return setmetatable(defaults, {
         __newindex = function()
@@ -123,10 +123,10 @@ UnitCompilationTypes = Enum({
 
 -- Units config
 
-UnitsConfig = UnitsConfigSet({
-    UnitFileName = "${UnitName}.Unit.lua",
-
+BuildConfig = BuildConfigSet({
     Program = Set({
+        UnitFileName = "${UnitName}.Unit.lua",
+
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}Module",
         ModuleFileName  = "${ModuleName}.Module.lua",
@@ -151,6 +151,8 @@ UnitsConfig = UnitsConfigSet({
     }),
 
     Engine = Set({
+        UnitFileName = "${UnitName}.Unit.lua",
+        
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
@@ -173,6 +175,8 @@ UnitsConfig = UnitsConfigSet({
     }),
 
     Plugin = Set({
+        UnitFileName = "${UnitName}.Plugin.lua",
+
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
@@ -232,21 +236,18 @@ end
 -- Units rules base
 
 local ProgramDefaultRules = RuleSet({
-    UnitType = "Program",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Executable,
     Modules = {}
 })
 
 local EngineDefaultRules = RuleSet({
-    UnitType = "Engine",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
-    UnitType = "Plugin",
     CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
