@@ -146,8 +146,6 @@ BuildConfig = BuildConfigSet({
                 bRecursive=true
             }
         }
-
-        -- TODO: Add platform based modules or submodules
     }),
 
     Engine = Set({

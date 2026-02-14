@@ -116,6 +116,8 @@ See
 - [Unit Rules Script](#unit-script)
 - [Module Rules Script](#module-script)
 
+**Note** : You can add every fields you want
+
 ### Build Configuration Script {#config-script}
 
 By default, the build system uses:
@@ -165,7 +167,6 @@ Each sub-unit entry must define:
 - `bRecursive` Boolean, recursive path search.
 - `UnitType` The unit type.
 - `UnitRootName` The unit root folder name.
-- `UnitFileName` The unit rules script file name.
 
 Supported macro:
 - `${UnitName}` (For `UnitRootName` and `UnitFileName`)
@@ -184,30 +185,38 @@ Supported macro:
 ```lua 
 BuildConfig = { 
     Program = { 
+        UnitFileName = "${UnitName}.Program.lua",
+
         ModulesDir = { "Modules" }, 
         ModuleRootName = "${ModuleName}Module", 
         ModuleFileName = "${ModuleName}.Module.lua", 
         ModuleClassName = "${ModuleName}Rules",
+        
         TargetsDir = "Targets", 
         TargetFileName = "${TargetName}.Target.lua", 
         TargetClassName = "${TargetName}TagetRules", 
+
         BuildDir = "Build", 
+
         SubUnits = { 
             { 
                 Dir = "Plugins", 
                 UnitType = "Plugin", 
                 UnitRootName = "${UnitName}", 
-                UnitFileName = "${UnitName}.Plugin.lua", 
                 bRecursive=true 
             } 
         } 
     },
     Plugin = { 
+        UnitFileName = "${UnitName}.Plugin.lua",
+
         ModulesDir = { "Modules" }, 
         ModuleRootName = "${ModuleName}", 
         ModuleFileName = "${ModuleName.Build.lua}", 
         ModuleClassName = "${ModuleName}Rules", 
+
         BuildDir = "Build", 
+
         SubUnits = {} 
     } 
 }
@@ -244,7 +253,7 @@ A target rules script must define:
 - C++23
 - C++26
 
-#### Supported Platforms (Enum Flags)
+#### Supported Platforms (Enum Flags) {#platforms}
 
 Lua code :
 
@@ -299,6 +308,12 @@ Required fields:
 
 - `Modules` A map containing the module name as key and a table containing additional data as value
 - `SubUnits` A map containing the unit name as key and a table containing additional data as value
+
+#### Additional data
+
+Possible fields for both Modules and SubUnits:
+
+- `Platforms` Compile only on some platforms. See [Platforms](#platforms)
 
 #### Example
 
