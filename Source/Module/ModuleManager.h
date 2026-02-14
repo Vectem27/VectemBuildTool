@@ -8,15 +8,14 @@
 class ModuleManager : public IModuleManager
 {
 public:
-    ModuleManager(bool bCacheModuleInfo = true) : bCacheModuleInfo(bCacheModuleInfo) {}
+    ModuleManager() = default;
 
-    virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure) override;
+    virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) override;
 
-    virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) const override;
+    virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName) const override;
 
 private:
     std::unordered_map<std::string, ModuleStructureInfo> modulesStructure;
 
-    bool bCacheModuleInfo;
     mutable std::unordered_map<std::string, ModuleInfo> cachedModuleInfos;
 };

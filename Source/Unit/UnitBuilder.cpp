@@ -2,14 +2,18 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
+#include <functional>
 #include <iostream>
+#include <memory>
 #include <regex>
+#include <stack>
 #include <sol/sol.hpp>
 
 #include "Compiler/ICompiler.h"
 #include "Module/IModuleInfoReader.h"
 #include "Module/IModuleManager.h"
 #include "BuildConfig/BuildConfigReader.h"
+#include "Module/Module.h"
 #include "UnitRulesReader.h"
 
 #include "Target/TargetRulesReader.h"
@@ -45,12 +49,11 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     fs::create_directories(buildOutput);
 
-    // Start compilation
+    // TODO: Compile sub-units
+
+    // Module rules
 
     ModuleManager moduleManager = ModuleManager();
-
-    ICompiler* compiler = compilerFactory.Create();
-
 
     for (const auto& moduleRules : unitRules.modules)
     {
@@ -83,38 +86,64 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         if (!fs::exists(moduleRulesFile) || !fs::is_regular_file(moduleRulesFile))
             throw UnitBuilderException("Missing '" + moduleRulesFile.string() + "' file for : '" + moduleRules.name + "'.");
 
-
         ModuleStructureInfo moduleStructure = {
             .rootDir = moduleDir,
             .buildRulesFile = moduleRulesFile,
-            .codeDir = "Source"
         };
 
-        moduleManager.AddModule(moduleRules.name, moduleStructure);
-
-
-        ModuleInfo moduleInfo;
-        {
-            sol::state moduleLua;
-            moduleLua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
-            moduleLua.safe_script_file(buildData.configurationFile.string());
-            moduleLua.safe_script_file(unitRulesFile.string());
-            moduleLua.safe_script_file(moduleRulesFile);
-            
-            IModuleInfoReader* moduleReader = new ModuleInfoReader(moduleLua);
-            moduleInfo = moduleManager.ResolveModuleInfo(
-                moduleRules.name, 
-                ResolveMacro(unitConfig.moduleClassName, "ModuleName", moduleRules.name), 
-                *moduleReader
-            );
-            delete moduleReader;
-        }
+        sol::state moduleLua;
+        moduleLua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
+        moduleLua.safe_script_file(buildData.configurationFile.string());
+        moduleLua.safe_script_file(unitRulesFile.string());
+        moduleLua.safe_script_file(moduleRulesFile);
         
+        std::unique_ptr<IModuleInfoReader> moduleReader = std::make_unique<ModuleInfoReader>(moduleLua);
 
-        std::cout << "Module directory : " << moduleDir << std::endl;
+        moduleManager.AddModule(moduleRules.name, moduleStructure,
+            ResolveMacro(unitConfig.moduleClassName, "ModuleName", moduleRules.name), 
+            *moduleReader
+        );
+    }
+
+    // Start compilation
+
+    std::deque<ModuleInfo> orderedDynamicModulesToLink;
+
+    std::function<void(const std::string&, std::deque<ModuleInfo>&, bool)> AddLinkDep;
+
+    AddLinkDep = [&moduleManager, &AddLinkDep](const std::string& moduleName, std::deque<ModuleInfo>& orderedModules, bool withPrivate)
+    {
+        for (const auto& linkModule : orderedModules)
+            if (linkModule.name == moduleName)
+                return;
+
+        
+        const ModuleInfo& info = moduleManager.ResolveModuleInfo(moduleName);
+
+        orderedModules.emplace_back(info);
+
+        for (const auto& pubDep : info.publicModuleDependencies)
+            AddLinkDep(pubDep, orderedModules, withPrivate);
+
+        if (!withPrivate)
+            return;
+        for (const auto& privDep : info.privateModuleDependencies)
+            AddLinkDep(privDep, orderedModules, withPrivate);
+    };
+
+
+    for (const auto& module : unitRules.modules)
+        AddLinkDep(module.name, orderedDynamicModulesToLink, true);
+
+
+    ICompiler* compiler = compilerFactory.Create();
+
+    for (const auto& moduleRules : unitRules.modules)
+    {
+        ModuleInfo moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name);
 
         std::vector<fs::path> cppFiles;
-        for (auto& p : fs::recursive_directory_iterator(moduleStructure.rootDir / moduleStructure.codeDir))
+        for (auto& p : fs::recursive_directory_iterator(moduleInfo.directory / moduleInfo.codeDir))
         {
             if (!p.is_regular_file())
                 continue;
@@ -129,7 +158,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         CompileInfo ci = {.outputName = moduleRules.name,
                           .buildOutputPath = buildOutput,
                           .filesToCompile = cppFiles,
-                          .includesPaths = {moduleDir},
+                          .includesPaths = {moduleInfo.directory},
                           .cppVersion = CppVersion::CPP_20,
                           .optimisation = CompilationOptimisation::OPTIMIZED};
 

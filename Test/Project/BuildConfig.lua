@@ -34,7 +34,7 @@ function Enum(names)
 
     for i, name in ipairs(names) do
         assert(values[name] == nil, "Duplicate enum value: " .. name)
-        values[name] = i
+        values[name] = name
     end
 
     return setmetatable({}, {
@@ -111,8 +111,11 @@ UnitCompilationTypes = Enum({
     "Library",
 })
 
-
-
+LinkingTypes = Enum({
+    "Static",
+    "Dynamic",
+    "DynamicLoading"
+})
 
 
 
@@ -237,19 +240,16 @@ end
 -- Units rules base
 
 local ProgramDefaultRules = RuleSet({
-    CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Executable,
     Modules = {}
 })
 
 local EngineDefaultRules = RuleSet({
-    CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
-    CppVersion = DefaultCppVersion,
     UnitCompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })

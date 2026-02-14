@@ -4,6 +4,12 @@
 
 Vectem Build Tool is a customizable, module-based C++ build system designed to provide flexible project organization and fine-grained compilation control.
 
+Document sections :
+
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Scripts](#scripts)
+
 It is built around four core concepts:
 
 - [Targets](#targets)
@@ -15,7 +21,7 @@ All configuration files are written in Lua, allowing dynamic and programmable bu
 
 ## Getting Started
 
-#### Command Pattern
+### Command Pattern
 
 ```xml
 VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependency-projects <ProjectRootDir> <UnitName> <UnitType> <Target>...] <ProjectRootDir> <UnitName> <UnitType> <Target>
@@ -23,13 +29,13 @@ VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependen
 
 Can have multiple --dependency-projects
 
-###### Example: Simple Project
+#### Example: Simple Project
 
 ```bash
 VectemBuildTool Project/ Project ProjectUnit Debug
 ```
 
-###### Example: Project with Dependency
+#### Example: Project with Dependency
 
 ```bash
 VectemBuildTool --config GlobalBuildConfig.lua --dependency-projects Engine/ Engine EnginUnit Release Project/ Project ProjectUnit Debug
@@ -61,9 +67,7 @@ Unit rules are executed before module rules.
 
 The system is highly customizable. You can modify folder structures, naming conventions, and rule behaviors.
 
----
-
-## Core Concepts
+### Core Concepts
 
 #### Modules
 
@@ -311,8 +315,14 @@ The unit rules table name must be the unit name
 
 Required fields:
 
+- `CompilationType`
 - `Modules` A map containing the module name as key and a table containing additional data as value
 - `SubUnits` A map containing the unit name as key and a table containing additional data as value
+
+#### Compilation types
+
+- Executable : Create an executable for the unit.
+- Library : Don't create an executable. Only libraries build.
 
 #### Additional data
 
@@ -354,6 +364,7 @@ A module rules script must define:
 - `PrivateIncludeDirectories`
 - `PublicModuleDependencies`
 - `PrivateModuleDependencies`
+- `CodeDir` The code directory
 
 Note:
 The module root directory is always added as a private include directory.

@@ -14,11 +14,6 @@ struct ModuleStructureInfo
 {
     std::filesystem::path rootDir;
     std::filesystem::path buildRulesFile;
-
-    /**
-     * @brief Directory containing the code, relative to the module root.
-     */
-    std::filesystem::path codeDir;
 };
 
 class ModuleManagerException : public std::runtime_error
@@ -34,7 +29,7 @@ class IModuleManager
 public:
     virtual ~IModuleManager() = default;
     
-    virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure) = 0;
+    virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) = 0;
 
-    virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) const = 0;
+    virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName) const = 0;
 };
