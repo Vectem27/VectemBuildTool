@@ -73,20 +73,6 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
             throw ModuleInfoReaderException("Module 'CodeDir' field is missing for '" + moduleName + "'."); 
         
         res.codeDir = codeDirField.value();
-
-        // Module linking type
-        sol::optional<std::string> linkingTypeField = moduleTable["LinkingType"];
-        if (!linkingTypeField)
-            throw ModuleInfoReaderException("Module 'LinkingType' field is missing for '" + moduleName + "'."); 
-
-        if (linkingTypeField.value() == "Static")
-            res.linkingType = LinkingType::STATIC;
-        else if (linkingTypeField.value() == "Dynamic")
-            res.linkingType = LinkingType::DYNAMIC;
-        else if (linkingTypeField.value() == "DynamicLoading")
-            res.linkingType = LinkingType::DYNAMIC_LOADING;
-        else
-            throw ModuleInfoReaderException("Invalid linking type for " + moduleName + " : '" + linkingTypeField.value() + "'.");
     }
     catch (const std::exception& e)
     {

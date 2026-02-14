@@ -3,6 +3,7 @@ add_executable(VectemBuildTool
 
     Module/ModuleInfoReader.cpp
     Module/ModuleManager.cpp
+    Module/ModuleGraphDependencySorter.cpp
     
     Compiler/ClangCompiler.cpp
     Compiler/MsvcCompiler.cpp

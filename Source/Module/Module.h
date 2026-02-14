@@ -4,13 +4,6 @@
 #include <vector>
 #include <filesystem>
 
-enum class LinkingType
-{
-    STATIC,
-    DYNAMIC,
-    DYNAMIC_LOADING
-};
-
 struct ModuleInfo
 {
     std::string name;
@@ -23,6 +16,4 @@ struct ModuleInfo
 
     std::vector<std::string> publicModuleDependencies;
     std::vector<std::string> privateModuleDependencies;
-
-    LinkingType linkingType;
 };

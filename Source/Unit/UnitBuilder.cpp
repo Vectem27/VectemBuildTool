@@ -110,31 +110,29 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     std::deque<ModuleInfo> orderedDynamicModulesToLink;
 
     std::function<void(const std::string&, std::deque<ModuleInfo>&, bool)> AddLinkDep;
-
     AddLinkDep = [&moduleManager, &AddLinkDep](const std::string& moduleName, std::deque<ModuleInfo>& orderedModules, bool withPrivate)
     {
         for (const auto& linkModule : orderedModules)
             if (linkModule.name == moduleName)
                 return;
-
         
         const ModuleInfo& info = moduleManager.ResolveModuleInfo(moduleName);
 
         orderedModules.emplace_back(info);
 
         for (const auto& pubDep : info.publicModuleDependencies)
-            AddLinkDep(pubDep, orderedModules, withPrivate);
+            AddLinkDep(pubDep, orderedModules, false);
 
         if (!withPrivate)
             return;
+
         for (const auto& privDep : info.privateModuleDependencies)
-            AddLinkDep(privDep, orderedModules, withPrivate);
+            AddLinkDep(privDep, orderedModules, false);
     };
 
 
     for (const auto& module : unitRules.modules)
         AddLinkDep(module.name, orderedDynamicModulesToLink, true);
-
 
     ICompiler* compiler = compilerFactory.Create();
 

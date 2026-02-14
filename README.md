@@ -359,7 +359,6 @@ ProjectUnit = {
 
 A module rules script must define:
 
-- `LinkingType`
 - `PublicIncludeDirectories`
 - `PrivateIncludeDirectories`
 - `PublicModuleDependencies`
@@ -368,12 +367,6 @@ A module rules script must define:
 
 Note:
 The module root directory is always added as a private include directory.
-
-#### Linking Types
-
-- Static
-- Dynamic
-- DynamicLoading
 
 #### Example
 
