@@ -4,7 +4,7 @@
 
 #include <sol/sol.hpp>
 
-TargetRules TargetRulesReader::ReadRules(std::string targetName, std::string targetFieldName) const
+TargetRules TargetRulesReader::ReadRules(const std::string& targetName, const std::string& targetRulesField) const
 {
     TargetRules rules;
 
@@ -12,9 +12,11 @@ TargetRules TargetRulesReader::ReadRules(std::string targetName, std::string tar
 
     try
     {
-        sol::table unitRules = lua[targetFieldName];
-        if (!unitRules.valid())
+        sol::optional<sol::table> unitRulesField = lua[targetRulesField].get<sol::optional<sol::table>>();
+        if (!unitRulesField)
             throw TargetRulesReaderException("Target rules field is missing for : '" + targetName + "'.");
+
+        sol::table unitRules = unitRulesField.value();
     }
     catch (const std::exception& e)
     {

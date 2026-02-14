@@ -13,5 +13,5 @@ class IUnitRulesReader
 {
 public:
     virtual ~IUnitRulesReader() = default;
-    virtual UnitRules ReadUnitsRules(std::string unitName) const = 0;
+    virtual UnitRules ReadUnitsRules(const std::string& unitName, const std::string& unitRulesField) const = 0;
 };

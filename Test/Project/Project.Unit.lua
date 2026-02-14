@@ -1,4 +1,4 @@
-ProjectUnit = ProgramRules({
+ProjectUnitRules = ProgramRules({
     Modules = {
         ModuleTest = {
             -- Module additional data

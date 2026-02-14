@@ -1,4 +1,3 @@
-Module = {
-    Name = "ModuleTest",
+ModuleTestModuleRules = {
     PublicIncludeDirectories = {"Public", "Interface"}
 }

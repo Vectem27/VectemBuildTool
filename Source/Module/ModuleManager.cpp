@@ -8,12 +8,12 @@
 #include <string>
 
 
-void ModuleManager::AddModule(std::string moduleName, ModuleStructureInfo moduleStructure) 
+void ModuleManager::AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure) 
 {
     modulesStructure[moduleName] = moduleStructure;
 }
 
-ModuleInfo ModuleManager::ResolveModuleInfo(std::string moduleName, IModuleInfoReader& moduleReader) const 
+ModuleInfo ModuleManager::ResolveModuleInfo(const std::string& moduleName, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) const 
 {
     if (bCacheModuleInfo)
     {
@@ -26,7 +26,7 @@ ModuleInfo ModuleManager::ResolveModuleInfo(std::string moduleName, IModuleInfoR
 
     try 
     {
-        res = moduleReader.ReadInfo(modulesStructure.at(moduleName).buildRulesFile.string());
+        res = moduleReader.ReadInfo(modulesStructure.at(moduleName).buildRulesFile.string(), moduleRulesField);
     } 
     catch (std::exception e) 
     {

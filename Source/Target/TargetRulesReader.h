@@ -9,7 +9,7 @@ class TargetRulesReader : public ITargetRulesReader
 public:
     TargetRulesReader(sol::state& luaState) : lua(luaState) {}
 
-    virtual TargetRules ReadRules(std::string targetName, std::string targetFieldName) const override;
+    virtual TargetRules ReadRules(const std::string& targetName, const std::string& targetRulesField) const override;
 
 private:
     sol::state& lua;

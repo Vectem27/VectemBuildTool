@@ -78,6 +78,18 @@ protected:
      */
     void ReadModulesrules(sol::state& luaState, const BuildData& buildData); 
 
+    /**
+     * @brief Resolve a macro inside a string.
+     * 
+     * Macro sub-string : ${MacroName}
+     * 
+     * @param str The given string.
+     * @param macroName The macro name
+     * @param value The replacing value
+     * @return The resolved string
+     */
+    std::string ResolveMacro(const std::string& str, const std::string& macroName, const std::string& value);
+
 private:
     const ICompilerFactory& compilerFactory;
 
@@ -86,7 +98,6 @@ private:
 
     std::filesystem::path unitRulesFile;
     std::filesystem::path buildTargetFile;
-    std::string buildTargetClassName;
     std::vector<std::filesystem::path> modulesDirs;
     std::filesystem::path buildOutput;
 

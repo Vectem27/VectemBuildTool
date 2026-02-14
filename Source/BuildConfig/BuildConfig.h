@@ -23,6 +23,7 @@ struct UnitConfig
     std::string type;
 
     std::string unitFileName;
+    std::string unitClassName;
 
     std::vector<std::filesystem::path> modulesDirs;
     std::string moduleRootName;

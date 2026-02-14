@@ -18,5 +18,5 @@ class IModuleInfoReader
 public:
     virtual ~IModuleInfoReader() = default;
 
-    virtual ModuleInfo ReadInfo(std::string filePath) const = 0;
+    virtual ModuleInfo ReadInfo(const std::string& moduleName, const std::string& moduleRulesField) const = 0;
 };

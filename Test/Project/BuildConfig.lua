@@ -126,11 +126,12 @@ UnitCompilationTypes = Enum({
 BuildConfig = BuildConfigSet({
     Program = Set({
         UnitFileName = "${UnitName}.Unit.lua",
+        UnitClassName = "${UnitName}UnitRules",
 
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}Module",
         ModuleFileName  = "${ModuleName}.Module.lua",
-        ModuleClassName = "${ModuleName}Rules", -- Not implemented
+        ModuleClassName = "${ModuleName}ModuleRules",
 
         TargetsDir = "Targets",
         TargetFileName  = "${TargetName}.Target.lua",
@@ -150,11 +151,12 @@ BuildConfig = BuildConfigSet({
 
     Engine = Set({
         UnitFileName = "${UnitName}.Unit.lua",
+        UnitClassName = "${UnitName}UnitRules",
         
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
-        ModuleClassName = "${ModuleName}Rules",
+        ModuleClassName = "${ModuleName}ModuleRules",
 
         TargetsDir = "Targets",
         TargetFileName  = "${TargetName}.Target.lua",
@@ -174,11 +176,12 @@ BuildConfig = BuildConfigSet({
 
     Plugin = Set({
         UnitFileName = "${UnitName}.Plugin.lua",
+        UnitClassName = "${UnitName}UnitRules",
 
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName.Build.lua}",
-        ModuleClassName = "${ModuleName}Rules",
+        ModuleClassName = "${ModuleName}ModuleRules",
         BuildDir = "Build",
         SubUnits = {}
     })

@@ -46,12 +46,16 @@ A project requires four types of configuration scripts:
 3. Unit Rules Script  
 4. Module Rules Script  
 
-All scripts are Lua files and are executed in the following order:
+All scripts are Lua files and are executed in the following order for units and modules:
 
 1. Build configuration script  
-2. Target rules script  
-3. Unit rules script  
-4. Module rules script  
+2. Unit rules script  
+3. Module rules script  
+
+And for target:
+
+1. Build configuration script  
+2. Target rules script
 
 Unit rules are executed before module rules.
 
@@ -147,6 +151,7 @@ BuildConfig
 Each unit type must define:
 
 - `UnitFileName` The unit file name.
+- `UnitClassName` The unit rules table name.
 - `ModulesDirs` (array, cannot be empty)
 - `ModuleRootName` The module root folder name.
 - `ModuleFileName` The module rules script file name.

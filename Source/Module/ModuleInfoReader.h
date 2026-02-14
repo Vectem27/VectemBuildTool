@@ -9,7 +9,7 @@ class ModuleInfoReader : public IModuleInfoReader
 public:
     ModuleInfoReader(sol::state& luaState) : lua(luaState) {}
 
-    virtual ModuleInfo ReadInfo(std::string filePath) const override;
+    virtual ModuleInfo ReadInfo(const std::string& moduleName, const std::string& moduleRulesField) const override;
     
 private:
     sol::state& lua;

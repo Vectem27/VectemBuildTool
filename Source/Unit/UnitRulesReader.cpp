@@ -5,16 +5,18 @@
 
 #include <sol/sol.hpp>
 
-UnitRules UnitRulesReader::ReadUnitsRules(std::string unitName) const 
+UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std::string& unitRulesFieldName) const 
 {
     UnitRules res;
 
     try
     {
         // Module table
-        sol::table unitRules = lua[unitName + "Unit"];
-        if (!unitRules.valid())
+        sol::optional<sol::table> unitRulesField = lua[unitRulesFieldName].get<sol::optional<sol::table>>();
+        if (!unitRulesField)
             throw UnitRulesReaderException("Unit rules is missing for : '" + unitName + "'.");
+
+        sol::table unitRules = unitRulesField.value();
 
         res.name = unitName;
 

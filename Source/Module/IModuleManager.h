@@ -34,7 +34,7 @@ class IModuleManager
 public:
     virtual ~IModuleManager() = default;
     
-    virtual void AddModule(std::string moduleName, ModuleStructureInfo moduleStructure) = 0;
+    virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure) = 0;
 
-    virtual ModuleInfo ResolveModuleInfo(std::string moduleName, IModuleInfoReader& moduleReader) const = 0;
+    virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) const = 0;
 };

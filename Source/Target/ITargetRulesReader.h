@@ -17,5 +17,5 @@ class ITargetRulesReader
 {
 public:
     virtual ~ITargetRulesReader() = default;
-    virtual TargetRules ReadRules(std::string targetName, std::string targetFieldName) const = 0;
+    virtual TargetRules ReadRules(const std::string& targetName, const std::string& targetRulesField) const = 0;
 };

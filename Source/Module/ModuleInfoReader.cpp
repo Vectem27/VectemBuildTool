@@ -12,36 +12,19 @@ bool DoesFileExists(const std::string& filePath)
     return fs::exists(filePath) && fs::is_regular_file(filePath);
 }
 
-ModuleInfo ModuleInfoReader::ReadInfo(std::string filePath) const 
+ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::string& moduleRulesField) const 
 {
-    if (!DoesFileExists(filePath))
-        throw ModuleInfoReaderException("File does not exists : '" + filePath +"'.");
-
     ModuleInfo res;
+    res.name = moduleName;
 
-    // Lua
+    try
     {
-        // Execute script
-        {
-            sol::protected_function_result result; 
-            result = lua.safe_script_file(filePath, sol::load_mode::text);
-            if (!result.valid())
-            {
-                sol::error err = result;
-                throw ModuleInfoReaderException("Lua error :\n" + std::string(err.what()));
-            }
-        }
-
         // Module table
-        sol::table moduleTable = lua["Module"];
-        if (!moduleTable.valid()) 
-            throw ModuleInfoReaderException("Module table is missing"); 
+        sol::optional<sol::table> moduleTableField = lua[moduleRulesField].get<sol::optional<sol::table>>();
+        if (!moduleTableField) 
+            throw ModuleInfoReaderException("Module table is missing : '" + moduleRulesField + "'."); 
 
-        // Module name
-        sol::optional<std::string> moduleNameField = moduleTable["Name"];
-        if (!moduleNameField) 
-            throw ModuleInfoReaderException("Module name is not set");
-        res.name = moduleNameField.value();
+        sol::table moduleTable = moduleTableField.value();
 
         // Module public include directories
         sol::table publicIncludeDirsTable = moduleTable["PublicIncludeDirectories"];
@@ -50,6 +33,16 @@ ModuleInfo ModuleInfoReader::ReadInfo(std::string filePath) const
         
         for (std::size_t i = 1; i <= publicIncludeDirsTable.size(); ++i)
             res.publicIncludeDirectories.push_back(publicIncludeDirsTable[i]);
+
     }
+    catch (const std::exception& e)
+    {
+        throw ModuleInfoReaderException(e.what());
+    }
+    catch (...)
+    {
+        throw ModuleInfoReaderException("Unkown exception");
+    }
+
     return res;
 }

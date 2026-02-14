@@ -14,9 +14,11 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
     try
     {
         // Units config table
-        sol::table unitsConfigTable = lua["BuildConfig"];
-        if (!unitsConfigTable.valid())
+        sol::optional<sol::table> unitsConfigTableField = lua["BuildConfig"].get<sol::optional<sol::table>>();
+        if (!unitsConfigTableField)
             throw BuildConfigReaderException("Units config table is missing");
+
+        sol::table unitsConfigTable = unitsConfigTableField.value();
 
         for (const auto& pair : unitsConfigTable)
         {
@@ -44,6 +46,13 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
             if (!unitFileNameField)
                 throw BuildConfigReaderException("Units config 'UnitFileName' field is missing.");
             info.unitFileName = unitFileNameField.value();
+
+            // Unit File Name
+            sol::optional<std::string> unitClassNameField;
+            unitClassNameField = infoTable["UnitClassName"].get<sol::optional<std::string>>();
+            if (!unitClassNameField)
+                throw BuildConfigReaderException("Units config 'UnitClassName' field is missing.");
+            info.unitClassName = unitClassNameField.value();
 
             // Module dir
             sol::optional<std::vector<std::string>> modulesDirField;
