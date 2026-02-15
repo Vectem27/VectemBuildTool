@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <list>
 
 #include "Compilation.h"
 
@@ -26,6 +27,9 @@ struct CompileInfo
 
     CppVersion cppVersion;
     CompilationOptimisation optimisation;
+    
+    std::list<std::vector<std::filesystem::path>> staticLibsToLink;
+    std::vector<std::filesystem::path> dynamicLibsToLink;
 };
 
 /**
@@ -57,14 +61,14 @@ public:
      *
      * @param compileInfo The compilation information for the executable to compile.
      */
-    virtual void CompileExecutable(const ExecutableCompileInfo& compileInfo) const = 0;
+    virtual void CompileExecutable(const CompileInfo& compileInfo) const = 0;
 
     /**
      * @brief Compiles a library with the given compilation information.
      *
      * @param compileInfo The compilation information for the library to compile.
      */
-    virtual void CompileLibrary(const LibraryCompileInfo& compileInfo) const = 0;
+    virtual void CompileLibrary(const CompileInfo& compileInfo) const = 0;
 };
 
 /**

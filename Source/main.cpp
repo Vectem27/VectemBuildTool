@@ -10,6 +10,9 @@
 #include "Compiler/ClangCompiler.h"
 #include "Unit/UnitBuilder.h"
 
+#include "Module/ModuleIncludeSolver.h"
+#include "Module/ModuleGraphDependencySorter.h"
+
 namespace fs = std::filesystem;
 
 // TODO: Made custom compile command from config file for extensibility)
@@ -190,8 +193,10 @@ int main(int argc, char* argv[])
     try
     {
         ClangCompilerFactory compilerFactory = ClangCompilerFactory();
+        ModuleIncludeSolver modIncSolver = ModuleIncludeSolver();
+        ModuleGraphDependencySorter modDepSorter = ModuleGraphDependencySorter();
 
-        UnitBuilder builder = UnitBuilder(compilerFactory);
+        UnitBuilder builder = UnitBuilder(compilerFactory, modDepSorter, modIncSolver);
 
         BuildData buildData {
             .unitRoot = unitRoot,

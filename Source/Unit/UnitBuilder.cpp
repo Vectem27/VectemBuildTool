@@ -2,14 +2,13 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
-#include <functional>
 #include <iostream>
 #include <memory>
 #include <regex>
-#include <stack>
 #include <sol/sol.hpp>
 
 #include "Compiler/ICompiler.h"
+#include "Module/IModuleDependencySorter.h"
 #include "Module/IModuleInfoReader.h"
 #include "Module/IModuleManager.h"
 #include "BuildConfig/BuildConfigReader.h"
@@ -107,38 +106,13 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     // Start compilation
 
-    std::deque<ModuleInfo> orderedDynamicModulesToLink;
-
-    std::function<void(const std::string&, std::deque<ModuleInfo>&, bool)> AddLinkDep;
-    AddLinkDep = [&moduleManager, &AddLinkDep](const std::string& moduleName, std::deque<ModuleInfo>& orderedModules, bool withPrivate)
-    {
-        for (const auto& linkModule : orderedModules)
-            if (linkModule.name == moduleName)
-                return;
-        
-        const ModuleInfo& info = moduleManager.ResolveModuleInfo(moduleName);
-
-        orderedModules.emplace_back(info);
-
-        for (const auto& pubDep : info.publicModuleDependencies)
-            AddLinkDep(pubDep, orderedModules, false);
-
-        if (!withPrivate)
-            return;
-
-        for (const auto& privDep : info.privateModuleDependencies)
-            AddLinkDep(privDep, orderedModules, false);
-    };
-
-
-    for (const auto& module : unitRules.modules)
-        AddLinkDep(module.name, orderedDynamicModulesToLink, true);
-
     ICompiler* compiler = compilerFactory.Create();
 
     for (const auto& moduleRules : unitRules.modules)
     {
         ModuleInfo moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name);
+
+        IncludesToAdd includes = moduleIncSolver.Resolve(moduleInfo.name, moduleManager);
 
         std::vector<fs::path> cppFiles;
         for (auto& p : fs::recursive_directory_iterator(moduleInfo.directory / moduleInfo.codeDir))
@@ -156,28 +130,43 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         CompileInfo ci = {.outputName = moduleRules.name,
                           .buildOutputPath = buildOutput,
                           .filesToCompile = cppFiles,
-                          .includesPaths = {moduleInfo.directory},
+                          .includesPaths = includes,
                           .cppVersion = CppVersion::CPP_20,
                           .optimisation = CompilationOptimisation::OPTIMIZED};
 
-        LibraryCompileInfo lci(ci);
-
-        compiler->CompileLibrary(lci);
+        compiler->CompileLibrary(ci);
     }
+
+
+    std::vector<std::string> moduleList;
+    for (const auto& modInf : unitRules.modules)
+        moduleList.emplace_back(modInf.name);
+
+    SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
+
 
     CompileInfo ci = {.outputName = buildData.unitName,
                       .buildOutputPath = buildOutput,
                       .filesToCompile = {},
                       .includesPaths = {},
                       .cppVersion = CppVersion::CPP_20,
-                      .optimisation = CompilationOptimisation::OPTIMIZED};
+                      .optimisation = CompilationOptimisation::OPTIMIZED
+    };
+    
+    for (const auto& group : sortedModules)
+    {
+        std::vector<std::filesystem::path> groupPaths;
+        for (const auto& module : group)
+            groupPaths.emplace_back(buildOutput / "lib" / module);
+        ci.staticLibsToLink.emplace_back(groupPaths);
+    }
 
     ExecutableCompileInfo eci(ci);
     eci.staticLibs = {};
     for (const auto& moduleRules : unitRules.modules)
         eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
 
-    compiler->CompileExecutable(eci);
+    compiler->CompileExecutable(ci);
     delete compiler;
 
 }

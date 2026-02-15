@@ -1,12 +1,13 @@
 #include "ModuleGraphDependencySorter.h"
+#include "Module/IModuleManager.h"
 #include "Module/Module.h"
 
-#include <unordered_map>
-#include <unordered_set>
-#include <stack>
-#include <utility>
 #include <functional>
 #include <queue>
+#include <stack>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
 
 struct ModuleDepGraph
 {
@@ -67,8 +68,10 @@ ReductedModuleDepGraph BuildReductedGraph(const ModuleDepGraph& graph)
         {
             std::vector<std::string> group;
             std::string w;
-            do {
-                w = S.top(); S.pop();
+            do
+            {
+                w = S.top();
+                S.pop();
                 onStack.erase(w);
                 moduleToGroup[w] = groupId;
                 group.push_back(w);
@@ -84,23 +87,28 @@ ReductedModuleDepGraph BuildReductedGraph(const ModuleDepGraph& graph)
             tarjan(mod);
     }
 
+    // ----- Custom hash for pairs -----
+    struct PairHash
+    {
+        std::size_t operator()(const std::pair<unsigned int, unsigned int>& p) const
+        {
+            return std::hash<unsigned long long>()((static_cast<unsigned long long>(p.first) << 32) | p.second);
+        }
+    };
 
-    std::unordered_set<std::pair<unsigned int, unsigned int>, 
-        std::hash<unsigned long long>> seenDeps;
-
+    std::unordered_set<std::pair<unsigned int, unsigned int>, PairHash> seenDeps;
     std::vector<std::pair<unsigned int, unsigned int>> reducedDeps;
 
     for (const auto& dep : graph.dependancies)
     {
         unsigned int gFrom = moduleToGroup[dep.moduleName];
-        unsigned int gTo   = moduleToGroup[dep.depModuleName];
+        unsigned int gTo = moduleToGroup[dep.depModuleName];
         if (gFrom != gTo)
         {
             std::pair<unsigned int, unsigned int> p = {gFrom, gTo};
-            if (!seenDeps.count(p))
+            if (seenDeps.insert(p).second) // insert retourne {iterator, bool}
             {
                 reducedDeps.push_back(p);
-                seenDeps.insert(p);
             }
         }
     }
@@ -111,45 +119,39 @@ ReductedModuleDepGraph BuildReductedGraph(const ModuleDepGraph& graph)
 SortedModulesGroups TopologicalSort(const ReductedModuleDepGraph& graph)
 {
     SortedModulesGroups result;
-    
-    // Calculer le degré entrant de chaque groupe
+
     std::unordered_map<unsigned int, int> inDegree;
     std::unordered_map<unsigned int, std::vector<unsigned int>> adjList;
-    
-    // Initialiser tous les groupes avec un degré entrant de 0
+
     for (const auto& [groupId, modules] : graph.moduleGroups)
     {
         inDegree[groupId] = 0;
         adjList[groupId] = {};
     }
-    
-    // Construire la liste d'adjacence et calculer les degrés entrants
+
     for (const auto& [from, to] : graph.groupsDep)
     {
         adjList[from].push_back(to);
         inDegree[to]++;
     }
-    
-    // File pour les nœuds sans dépendance (degré entrant = 0)
+
     std::queue<unsigned int> queue;
     for (const auto& [groupId, degree] : inDegree)
     {
         if (degree == 0)
             queue.push(groupId);
     }
-    
-    // Algorithme de Kahn pour le tri topologique
+
+    // Algorithme Kahn
     while (!queue.empty())
     {
         unsigned int current = queue.front();
         queue.pop();
-        
-        // Ajouter le groupe de modules au résultat
+
         auto it = graph.moduleGroups.find(current);
         if (it != graph.moduleGroups.end())
             result.push_back(it->second);
-        
-        // Réduire le degré entrant des voisins
+
         for (unsigned int neighbor : adjList[current])
         {
             inDegree[neighbor]--;
@@ -157,37 +159,35 @@ SortedModulesGroups TopologicalSort(const ReductedModuleDepGraph& graph)
                 queue.push(neighbor);
         }
     }
-    
-    // Vérifier s'il y a un cycle
+
     if (result.size() != graph.moduleGroups.size())
     {
-        throw std::runtime_error("Cycle détecté dans le graphe de dépendances");
+        throw std::runtime_error("There is a cylcle in the dependances group graph.");
     }
-    
+
     return result;
 }
 
-SortedModulesGroups ModuleGraphDependencySorter::Sort(std::vector<std::string> modulesName) const
+SortedModulesGroups ModuleGraphDependencySorter::Sort(std::vector<std::string> modulesName,
+                                                      const IModuleManager& moduleManager) const
 {
-    
-
     ModuleDepGraph moduleDepGraph;
 
     for (const auto& moduleName : modulesName)
-        AddModuleAndDependencies(moduleName, moduleDepGraph.modules, moduleDepGraph.dependancies, modulesName);
+        AddModuleAndDependencies(moduleName, moduleDepGraph.modules, moduleDepGraph.dependancies, modulesName, moduleManager);
 
     ReductedModuleDepGraph reducedGraph = BuildReductedGraph(moduleDepGraph);
 
     SortedModulesGroups res = TopologicalSort(reducedGraph);
-    res.reverse();
-    
+
     return res;
 }
 
 // Recursive function
 void ModuleGraphDependencySorter::AddModuleAndDependencies(const std::string& moduleName, std::list<std::string>& modules,
                                                            std::list<ModuleDependency>& dependancies,
-                                                           const std::vector<std::string>& unitModules) const
+                                                           const std::vector<std::string>& unitModules,
+                                                           const IModuleManager& moduleManager) const
 {
     if (!IsUnitModule(moduleName, unitModules)) // Add only unit modules
         return;
@@ -200,13 +200,13 @@ void ModuleGraphDependencySorter::AddModuleAndDependencies(const std::string& mo
     for (const auto& depModuleName : moduleInfo.publicModuleDependencies)
     {
         AddDependency(moduleName, depModuleName, dependancies);
-        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules);
+        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager);
     }
 
     for (const auto& depModuleName : moduleInfo.privateModuleDependencies)
     {
         AddDependency(moduleName, depModuleName, dependancies);
-        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules);
+        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager);
     }
 }
 
@@ -238,4 +238,6 @@ bool ModuleGraphDependencySorter::IsUnitModule(const std::string& moduleName, co
     for (const auto& modName : unitModules)
         if (modName == moduleName)
             return true;
+
+    return false;
 }

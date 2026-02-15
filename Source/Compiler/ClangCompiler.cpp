@@ -66,7 +66,7 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 #endif
 }
 
-void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const
+void ClangCompiler::CompileExecutable(const CompileInfo& compileInfo) const
 {
     std::vector<std::string> argStrings;
 
@@ -99,11 +99,28 @@ void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
 
     fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");
 #else
-    for (const auto& libPath : compileInfo.staticLibs)
+    for (const auto& group : compileInfo.staticLibsToLink)
+        for(const auto& libPath : group)
         argStrings.push_back("-L" + libPath.parent_path().string());
 
-    for (const auto& libPath : compileInfo.staticLibs)
-        argStrings.push_back("-l" + libPath.stem().string());
+    for (const auto& group : compileInfo.staticLibsToLink)
+    {
+        if (group.size() == 1) // Single if no circular dependencies
+        {
+            argStrings.push_back("-l" + group[0].stem().string());
+            continue;
+        }
+
+        argStrings.push_back("-Wl,--start-group"); 
+
+        for(const auto& libPath : group)
+            argStrings.push_back("-l" + libPath.stem().string());
+
+        argStrings.push_back("-Wl,--end-group");
+    }
+
+    //for (const auto& libPath : compileInfo.staticLibs)
+    //    argStrings.push_back("-l" + libPath.stem().string());
 
     fs::path outputFile = compileInfo.buildOutputPath / "bin" / compileInfo.outputName;
 #endif
@@ -116,7 +133,7 @@ void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
     ExecuteCommand(clangPath, argStrings);
 }
 
-void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
+void ClangCompiler::CompileLibrary(const CompileInfo& compileInfo) const
 {
 #ifdef _WIN32
     fs::path clangPath = "clang++.exe";

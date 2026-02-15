@@ -9,6 +9,7 @@
 #include "BuildConfig/BuildConfig.h"
 #include "Unit/UnitRulesReader.h"
 #include "Module/IModuleDependencySorter.h"
+#include "Module/IModuleIncludeSolver.h"
 
 class ITargetRulesReader;
 
@@ -38,7 +39,9 @@ private:
 class UnitBuilder
 {
 public:
-    UnitBuilder(const ICompilerFactory& compilerFactory, const IModuleDependencySorter& moduleDepSorter) : compilerFactory(compilerFactory), moduleDepSorter(moduleDepSorter) {}
+    UnitBuilder(const ICompilerFactory& compilerFactory, const IModuleDependencySorter& moduleDepSorter, const IModuleIncludeSolver& moduleIncSolver) 
+        : compilerFactory(compilerFactory), moduleDepSorter(moduleDepSorter), moduleIncSolver(moduleIncSolver)
+    {}
 
     void BuildUnit(const BuildData& buildData);
 
@@ -94,6 +97,7 @@ protected:
 private:
     const ICompilerFactory& compilerFactory;
     const IModuleDependencySorter& moduleDepSorter;
+    const IModuleIncludeSolver& moduleIncSolver;
 
     BuildConfig unitsConfigs;
     UnitConfig unitConfig;
