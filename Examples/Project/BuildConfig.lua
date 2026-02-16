@@ -221,8 +221,7 @@ end
 
 local ModuleDefaultRules = RuleSet({
     CppVersion = DefaultCppVersion,
-    SupportedPlaMinecraft*2006*
-    .All
+    SupportedPlatforms = Platforms.All
 })
 
 function ModuleRules(defaults)
