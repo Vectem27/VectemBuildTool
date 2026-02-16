@@ -1,11 +1,9 @@
-ModuleTestModuleRules = {
+ExeModuleTestModuleRules = {
     PublicIncludeDirectories = {"Public", "Interface"},
     PrivateIncludeDirectories = {"Private"},
 
-    PublicDependencies = {},
+    PublicDependencies = {"ModuleTest"},
     PrivateDependencies = {},
 
-    LinkingType = LinkingTypes.Static,
-    
     CodeDir = "Source"
 }

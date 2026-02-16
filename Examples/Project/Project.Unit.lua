@@ -1,10 +1,10 @@
 ProjectUnitRules = ProgramRules({
     Modules = {
         ModuleTest = {
-            -- Module additional data
+            Platforms = Platforms.All
         },
         ExeModuleTest = {
-            -- Module additional data
+            Platforms = Platforms.All
         }
     }
 })
