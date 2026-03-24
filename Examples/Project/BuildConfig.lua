@@ -99,18 +99,62 @@ end
 
 local DefaultCppVersion = 20
 
+-- Platform definitions (Enum Flags)
 Platforms = EnumFlag({
     "Windows",
+    "MacOS",
     "Linux",
-    "MacOS"
+    "Android",
+    "IOS",
+    "FreeBSD",
+    "OpenBSD",
+    "NetBSD"
 })
 
+-- C language versions
+CVersions = Enum({
+    "C90",
+    "C99",
+    "C11",
+    "C17",
+    "C23"
+})
 
+-- C++ language versions
+CppVersions = Enum({
+    "CPP98",
+    "CPP03",
+    "CPP11",
+    "CPP14",
+    "CPP17",
+    "CPP20",
+    "CPP23",
+    "CPP26"
+})
+
+-- Optimization types
+OptimisationTypes = Enum({
+    "None",
+    "Standard",
+    "Aggressive",
+    "Fast",
+    "MinSize"
+})
+
+-- Floating point model types
+FloatingPointTypes = Enum({
+    "Strict",
+    "Precise",
+    "Fast"
+})
+
+-- Unit compilation types
 UnitCompilationTypes = Enum({
     "Executable",
     "Library",
 })
 
+-- Linking types
 LinkingTypes = Enum({
     "Static",
     "Dynamic",
@@ -200,6 +244,12 @@ BuildConfig = BuildConfigSet({
 -- Target rules base
 
 local TargetDefaultRules = RuleSet({
+    bAddDebugInfo = false,
+    CVersion = CVersions.C17,
+    CppVersion = CppVersions.CPP20,
+    SupportedPlatforms = Platforms.All,
+    OptimisationType = OptimisationTypes.Standard,
+    FloatingPointType = FloatingPointTypes.Precise
     --OverrideUnitCompilationType = {
         -- e.g. Plugin = UnitCompilationTypes.Library
     --}
@@ -257,9 +307,6 @@ local PluginDefaultRules = RuleSet({
 
 
 
-
-
-
 -- Units creation functions
 
 local function MakeUnit(defaults, rules)
@@ -271,3 +318,27 @@ end
 EngineRules  = function(d) return MakeUnit(d, EngineDefaultRules) end
 ProgramRules = function(d) return MakeUnit(d, ProgramDefaultRules) end
 PluginRules  = function(d) return MakeUnit(d, PluginDefaultRules) end
+
+
+-- Module base
+
+local DefaultModuleRules = {
+    PublicIncludeDirectories = {"Public"},
+    PrivateIncludeDirectories = {"Private"},
+
+    PublicDependencies = {},
+    PrivateDependencies = {},
+
+    CodeDir = "Source"
+}
+
+function Module(defaults)
+    assert(type(defaults) == "table", "Module expects a table")
+
+    return setmetatable(defaults, {
+        __index = DefaultModuleRules;
+        __newindex = function(table, key, _)
+            error("Unknown key '" .. key .. " from module " .. table)
+        end
+    })
+end

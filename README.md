@@ -253,14 +253,14 @@ A target rules script must define:
 - C23
 
 #### Supported C++ Versions
-- C++98
-- C++03
-- C++11
-- C++14
-- C++17
-- C++20
-- C++23
-- C++26
+- CPP98
+- CPP03
+- CPP11
+- CPP14
+- CPP17
+- CPP20
+- CPP23
+- CPP26
 
 #### Supported Platforms (Enum Flags) {#platforms}
 

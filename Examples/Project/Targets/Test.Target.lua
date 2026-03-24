@@ -1,3 +1,0 @@
-
-TestTagetRules = TargetRules({
-})
