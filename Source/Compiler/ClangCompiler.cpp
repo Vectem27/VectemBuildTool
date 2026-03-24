@@ -66,7 +66,7 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 #endif
 }
 
-void ClangCompiler::CompileExecutable(const CompileInfo& compileInfo) const
+void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const
 {
     std::vector<std::string> argStrings;
 
@@ -77,7 +77,23 @@ void ClangCompiler::CompileExecutable(const CompileInfo& compileInfo) const
 #endif
 
     argStrings.push_back(clangPath.string());
+    
+    // Add C version flag
+    if (compileInfo.cVersion != CVersion::C17)
+        argStrings.push_back(GetCVersionClangOption(compileInfo.cVersion));
+    
+    // Add C++ version flag
     argStrings.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
+    
+    // Add debug info flag
+    if (compileInfo.bAddDebugInfo)
+        argStrings.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
+    
+    // Add optimization flag
+    argStrings.push_back(GetOptimisationClangOption(compileInfo.optimisation));
+    
+    // Add floating point flag
+    argStrings.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
 
     for (const auto& include : compileInfo.includesPaths)
         argStrings.push_back("-I" + include.string());
@@ -133,7 +149,7 @@ void ClangCompiler::CompileExecutable(const CompileInfo& compileInfo) const
     ExecuteCommand(clangPath, argStrings);
 }
 
-void ClangCompiler::CompileLibrary(const CompileInfo& compileInfo) const
+void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
 {
 #ifdef _WIN32
     fs::path clangPath = "clang++.exe";
@@ -159,7 +175,23 @@ void ClangCompiler::CompileLibrary(const CompileInfo& compileInfo) const
     {
         std::vector<std::string> args;
         args.push_back(clangPath.string());
+        
+        // Add C version flag
+        if (compileInfo.cVersion != CVersion::C17)
+            args.push_back(GetCVersionClangOption(compileInfo.cVersion));
+        
+        // Add C++ version flag
         args.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
+        
+        // Add debug info flag
+        if (compileInfo.bAddDebugInfo)
+            args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
+        
+        // Add optimization flag
+        args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
+        
+        // Add floating point flag
+        args.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
 
         for (const auto& include : compileInfo.includesPaths)
             args.push_back("-I" + include.string());
@@ -194,22 +226,89 @@ void ClangCompiler::CompileLibrary(const CompileInfo& compileInfo) const
     ExecuteCommand(arPath, arArgs);
 }
 
+std::string ClangCompiler::GetCVersionClangOption(CVersion version) const
+{
+    std::string opt("-std=");
+    switch (version)
+    {
+    case CVersion::C90:
+        return opt + "c90";
+    case CVersion::C99:
+        return opt + "c99";
+    case CVersion::C11:
+        return opt + "c11";
+    case CVersion::C17:
+        return opt + "c17";
+    case CVersion::C23:
+        return opt + "c23";
+    default:
+        return opt + "c17";
+    }
+}
+
 std::string ClangCompiler::GetCppVersionClangOption(CppVersion version) const
 {
     std::string opt("-std=");
     switch (version)
     {
-    case CppVersion::CPP_11:
+    case CppVersion::CPP98:
+        return opt + "c++98";
+    case CppVersion::CPP03:
+        return opt + "c++03";
+    case CppVersion::CPP11:
         return opt + "c++11";
-    case CppVersion::CPP_14:
+    case CppVersion::CPP14:
         return opt + "c++14";
-    case CppVersion::CPP_17:
+    case CppVersion::CPP17:
         return opt + "c++17";
-    case CppVersion::CPP_20:
+    case CppVersion::CPP20:
         return opt + "c++20";
-    case CppVersion::CPP_23:
+    case CppVersion::CPP23:
         return opt + "c++23";
+    case CppVersion::CPP26:
+        return opt + "c++2c";
     default:
-        return opt + "c++11";
+        return opt + "c++20";
     }
+}
+
+std::string ClangCompiler::GetOptimisationClangOption(CompilationOptimisation optimisation) const
+{
+    switch (optimisation)
+    {
+    case CompilationOptimisation::NONE:
+        return "-O0";
+    case CompilationOptimisation::STANDARD:
+        return "-O2";
+    case CompilationOptimisation::AGGRESSIVE:
+        return "-O3";
+    case CompilationOptimisation::FAST:
+        return "-O3";
+    case CompilationOptimisation::MIN_SIZE:
+        return "-Os";
+    default:
+        return "-O2";
+    }
+}
+
+std::string ClangCompiler::GetFloatingPointClangOption(FloatingPointModel floatingPoint) const
+{
+    switch (floatingPoint)
+    {
+    case FloatingPointModel::STRICT:
+        return "-fno-fast-math";
+    case FloatingPointModel::PRECISE:
+        return "-fno-fast-math";
+    case FloatingPointModel::FAST:
+        return "-ffast-math";
+    default:
+        return "-fno-fast-math";
+    }
+}
+
+std::string ClangCompiler::GetDebugInfoClangOption(bool bAddDebugInfo) const
+{
+    if (bAddDebugInfo)
+        return "-g";
+    return "";
 }

@@ -61,8 +61,5 @@ UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std
         throw UnitRulesReaderException("Unkown exception");
     }
 
-    res.compilationType = UnitCompilationType::EXECUTABLE;
-    res.cppVersion = CppVersion::CPP_20;
-
     return res;
 }

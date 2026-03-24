@@ -58,10 +58,16 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                           .buildOutputPath = buildOutput,
                           .filesToCompile = cppFiles,
                           .includesPaths = includes,
-                          .cppVersion = CppVersion::CPP_20,
-                          .optimisation = CompilationOptimisation::OPTIMIZED};
-
-        compiler->CompileLibrary(ci);
+                          .bAddDebugInfo = targetRules.bAddDebugInfo,
+                          .cVersion = targetRules.cVersion,
+                          .cppVersion = targetRules.cppVersion,
+                          .supportedPlatforms = targetRules.supportedPlatforms,
+                          .optimisation = targetRules.optimisationType,
+                          .floatingPointModel = targetRules.floatingPointType,
+                          };
+        LibraryCompileInfo lci{ci};
+        lci.linkType = LinkType::STATIC;
+        compiler->CompileLibrary(lci);
     }
 
     std::vector<std::string> moduleList;
@@ -74,8 +80,12 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                       .buildOutputPath = buildOutput,
                       .filesToCompile = {},
                       .includesPaths = {},
-                      .cppVersion = CppVersion::CPP_20,
-                      .optimisation = CompilationOptimisation::OPTIMIZED};
+                      .bAddDebugInfo = targetRules.bAddDebugInfo,
+                      .cVersion = targetRules.cVersion,
+                      .cppVersion = targetRules.cppVersion,
+                      .supportedPlatforms = targetRules.supportedPlatforms,
+                      .optimisation = targetRules.optimisationType,
+                      .floatingPointModel = targetRules.floatingPointType};
 
     for (const auto& group : sortedModules)
     {
@@ -90,6 +100,6 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     for (const auto& moduleRules : unitRules.modules)
         eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
 
-    compiler->CompileExecutable(ci);
+    compiler->CompileExecutable(eci);
     delete compiler;
 }

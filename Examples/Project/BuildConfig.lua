@@ -97,8 +97,6 @@ end
 -- Variables --
 ---------------
 
-local DefaultCppVersion = 20
-
 -- Platform definitions (Enum Flags)
 Platforms = EnumFlag({
     "Windows",
@@ -270,7 +268,7 @@ end
 -- Module rules base
 
 local ModuleDefaultRules = RuleSet({
-    CppVersion = DefaultCppVersion,
+    CppVersion = CppVersions.CPP20,
     SupportedPlatforms = Platforms.All
 })
 

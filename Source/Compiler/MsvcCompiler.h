@@ -5,24 +5,28 @@
 #include "Compiler/Compilation.h"
 #include "ICompiler.h"
 
-class ClangCompiler : public ICompiler
+class MsvcCompiler : public ICompiler
 {
 public:
-    ClangCompiler() = default;
+    MsvcCompiler() = default;
 
-    virtual void CompileExecutable(const CompileInfo& compileInfo) const override;
-    virtual void CompileLibrary(const CompileInfo& compileInfo) const override;
+    virtual void CompileExecutable(const ExecutableCompileInfo& compileInfo) const override;
+    virtual void CompileLibrary(const LibraryCompileInfo& compileInfo) const override;
 
 protected:
-    std::string GetCppVersionClangOption(CppVersion version) const;
+    std::string GetCVersionMsvcOption(CVersion version) const;
+    std::string GetCppVersionMsvcOption(CppVersion version) const;
+    std::string GetOptimisationMsvcOption(CompilationOptimisation optimisation) const;
+    std::string GetFloatingPointMsvcOption(FloatingPointModel floatingPoint) const;
+    std::string GetDebugInfoMsvcOption(bool bAddDebugInfo) const;
 };
 
-class ClangCompilerFactory : public ICompilerFactory
+class MsvcCompilerFactory : public ICompilerFactory
 {
 public:
-    ClangCompilerFactory() = default;
+    MsvcCompilerFactory() = default;
 
-    virtual ICompiler* Create() const { return new ClangCompiler(); }
+    virtual ICompiler* Create() const { return new MsvcCompiler(); }
 };
 
 #endif

@@ -5,16 +5,6 @@
 #include <vector>
 
 /**
- * @brief Enumeration descripting a unit compilation type
- */
-enum UnitCompilationType
-{
-    EXECUTABLE,
-    STATIC_LIBRARY,
-    DYNAMIC_LIBRARY
-};
-
-/**
  * @brief Structure holding modules info
  */
 struct UnitModule
@@ -28,7 +18,5 @@ struct UnitModule
 struct UnitRules
 {
     std::string name;
-    CppVersion cppVersion;
-    UnitCompilationType compilationType;
     std::vector<UnitModule> modules;
 };
