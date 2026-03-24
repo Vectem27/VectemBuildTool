@@ -1,5 +1,5 @@
 ModuleTestModuleRules = {
-    PublicIncludeDirectories = {"Public", "Interface"},
+    PublicIncludeDirectories = {"Public"},
     PrivateIncludeDirectories = {"Private"},
 
     PublicDependencies = {},

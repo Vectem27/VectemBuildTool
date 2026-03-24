@@ -1,6 +1,8 @@
 #include <iostream>
 
-extern int TestFunc();
+#include "test.h"
+
+//extern int TestFunc();
 
 int main()
 {
