@@ -23,13 +23,20 @@ UnitBuilder::UnitBuilder(IModuleManager& moduleManager, const ICompilerFactory& 
 
 void UnitBuilder::BuildUnit(const BuildData& buildData)
 {
-    UnitBuilderBase::BuildUnit(buildData);
-
-    fs::create_directories(buildOutput);
-
     // TODO: Compile sub-units
+    
+    UnitBuilderBase::BuildUnit(buildData);
+    
     // TODO: Add sub folder to copy (For script for example)
     // TODO: Add native external libraries support
+
+    for (const auto& dependancy : buildData.dependancyProjects)
+    {
+        Logger::Log(LogLevel::Info, "Fetch dependancy project: %s", dependancy.unitName.c_str());
+        ProcessDependancyProject(dependancy, buildData);
+    }
+
+    fs::create_directories(buildOutput);
 
     // Start compilation
 
@@ -70,9 +77,9 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         compiler->CompileLibrary(lci);
     }
 
-    std::vector<std::string> moduleList;
-    for (const auto& modInf : unitRules.modules)
-        moduleList.emplace_back(modInf.name);
+
+    // TODO: Add dependancies modules to link
+    std::vector<std::string> moduleList = moduleManager.GetModuleNames();
 
     SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
 
@@ -102,4 +109,27 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     compiler->CompileExecutable(eci);
     delete compiler;
+}
+
+void UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, const BuildData& buildData) 
+{
+    // Prepare a Lua state for the dependency and read its build config + unit rules
+    sol::state luaState;
+    luaState.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
+
+    BuildData dependancyBuildData = {
+        .unitRoot = dependancy.projectPath,
+        .unitName = dependancy.unitName,
+        .unitType = dependancy.unitType,
+        .buildTarget = buildData.buildTarget,
+        .dependancyProjects = {},
+        .configurationFile = buildData.configurationFile,
+        .platform = buildData.platform
+    };
+
+    auto unitRules = FetchUnitRules(luaState, dependancyBuildData);
+
+    std::filesystem::path unitRulesFile = dependancyBuildData.unitRoot / unitConfig.unitFileName;
+
+    ReadModulesrules(dependancyBuildData, unitRulesFile.string(), unitRules.modules);
 }

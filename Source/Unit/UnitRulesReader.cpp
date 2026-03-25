@@ -1,6 +1,5 @@
 
 #include "UnitRulesReader.h"
-#include "Compiler/Compilation.h"
 #include "Unit/Unit.h"
 
 #include <sol/sol.hpp>

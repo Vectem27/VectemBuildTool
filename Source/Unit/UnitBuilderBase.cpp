@@ -35,7 +35,7 @@ void UnitBuilderBase::BuildUnit(const BuildData& buildData)
         ReadTarget(targetLua, buildData);
     }
 
-    ReadModulesrules(buildData);
+    ReadModulesrules(buildData, unitRulesFile, unitRules.modules);
 }
 
 
@@ -72,12 +72,7 @@ void UnitBuilderBase::ReadConfiguration(sol::state& luaState, const BuildData& b
 
 void UnitBuilderBase::ReadUnitRules(sol::state& luaState, const BuildData& buildData)
 {
-    {
-        IUnitRulesReader* unitRulesReader = new UnitRulesReader(luaState);
-        unitRules = unitRulesReader->ReadUnitsRules(buildData.unitName,
-                                                    ResolveMacro(unitConfig.unitClassName, "UnitName", buildData.unitName));
-        delete unitRulesReader;
-    }
+    unitRules = FetchUnitRules(luaState, buildData);
 
     buildOutput = buildData.unitRoot / unitConfig.buildDir / buildData.platform / buildData.buildTarget;
 
@@ -97,7 +92,7 @@ void UnitBuilderBase::ReadTarget(sol::state& luaState, const BuildData& buildDat
     delete targetRulesReader;
 }
 
-void UnitBuilderBase::ReadModulesrules(const BuildData& buildData)
+void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules)
 {
     if (unitConfig.modulesDirs.empty())
         throw UnitBuilderException("Module dir is empty for the config unit : '" + unitConfig.type + "'.");
@@ -106,7 +101,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData)
         modulesDirs.emplace_back(buildData.unitRoot / moduleDir);
 
     
-    for (const auto& moduleRules : unitRules.modules)
+    for (const auto& moduleRules : modules)
     {
         // Get module info :
 
@@ -136,7 +131,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData)
 
         if (!fs::exists(moduleRulesFile) || !fs::is_regular_file(moduleRulesFile))
             throw UnitBuilderException("Missing '" + moduleRulesFile.string() + "' file for : '" + moduleRules.name + "'.");
-
+ 
         ModuleStructureInfo moduleStructure = {
             .rootDir = moduleDir,
             .buildRulesFile = moduleRulesFile,
@@ -161,3 +156,8 @@ std::string UnitBuilderBase::ResolveMacro(const std::string& str, const std::str
     return std::regex_replace(str, std::regex("(\\$\\{" + macroName + "\\})"), value);
 }
 
+UnitRules UnitBuilderBase::FetchUnitRules(sol::state& luaState, const BuildData& buildData) 
+{ 
+    std::unique_ptr<IUnitRulesReader> unitRulesReader = std::make_unique<UnitRulesReader>(luaState);
+    return unitRulesReader->ReadUnitsRules(buildData.unitName, ResolveMacro(unitConfig.unitClassName, "UnitName", buildData.unitName));
+}

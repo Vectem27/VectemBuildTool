@@ -17,6 +17,8 @@ public:
 
     virtual void BuildUnit(const BuildData& buildData) override;
 
+    virtual void ProcessDependancyProject(const ProjectDependancy& dependancy, const BuildData& buildData);
+
 protected:
     const ICompilerFactory& compilerFactory;
     const IModuleDependencySorter& moduleDepSorter;

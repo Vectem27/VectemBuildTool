@@ -11,12 +11,21 @@
 #include "BuildConfig/BuildConfig.h"
 
 
+struct ProjectDependancy
+{
+    std::filesystem::path projectPath;
+    std::string unitName;
+    std::string unitType;
+};
+
 struct BuildData
 {
     std::filesystem::path unitRoot;
     std::string unitName;
     std::string unitType;
     std::string buildTarget;
+
+    std::vector<ProjectDependancy> dependancyProjects;
 
     std::filesystem::path configurationFile;
     std::string platform;
@@ -76,7 +85,7 @@ protected:
      * @param luaState The lua state
      * @param buildData The according build data
      */
-    virtual void ReadModulesrules(const BuildData& buildData);
+    virtual void ReadModulesrules(const BuildData& buildData, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules);
 
     /**
      * @brief Resolve a macro inside a string.
@@ -89,6 +98,9 @@ protected:
      * @return The resolved string
      */
     virtual std::string ResolveMacro(const std::string& str, const std::string& macroName, const std::string& value);
+
+protected:
+    UnitRules FetchUnitRules(sol::state& luaState, const BuildData& buildData);
 
 protected:
     IModuleManager& moduleManager;

@@ -32,4 +32,6 @@ public:
     virtual void AddModule(const std::string& moduleName, ModuleStructureInfo moduleStructure, const std::string& moduleRulesField, IModuleInfoReader& moduleReader) = 0;
 
     virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName) const = 0;
+
+    virtual std::vector<std::string> GetModuleNames() const = 0;
 };

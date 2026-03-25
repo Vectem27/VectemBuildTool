@@ -14,6 +14,14 @@ public:
 
     virtual ModuleInfo ResolveModuleInfo(const std::string& moduleName) const override;
 
+    virtual std::vector<std::string> GetModuleNames() const override
+    {
+        std::vector<std::string> names;
+        for (const auto& pair : modulesStructure)
+            names.push_back(pair.first);
+        return names;
+    }
+
 private:
     std::unordered_map<std::string, ModuleStructureInfo> modulesStructure;
 

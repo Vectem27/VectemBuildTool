@@ -115,11 +115,11 @@ int main(int argc, char* argv[])
 
     app.add_option("-l, --log-level", logLevel, "Minimum log level (critical, error, warning, info, debug, trace)");
 
-    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-type target-name)")
+    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-name unit-type)")
        ->each([](const std::string& input) -> std::string {
-            static bool isProjectPath = true;
+            static int state = 0; // 0=path,1=unitName,2=unitType
 
-            if (isProjectPath)
+            if (state == 0)
             {
                 if (!fs::exists(fs::absolute(input)))
                 {
@@ -128,21 +128,29 @@ int main(int argc, char* argv[])
                         "Project path does not exist : " + input
                     );
                 }
-
             }
-            else 
+            else if (state == 1)
             {
                 if (input.empty())
                 {
                     throw CLI::ValidationError(
                         "--dependancy",
-                        "Target name cannot be empty"
+                        "Unit name cannot be empty"
+                    );
+                }
+            }
+            else if (state == 2)
+            {
+                if (input.empty())
+                {
+                    throw CLI::ValidationError(
+                        "--dependancy",
+                        "Unit type cannot be empty"
                     );
                 }
             }
 
-            isProjectPath = !isProjectPath;
-
+            state = (state + 1) % 3;
            return input;
        });
 
@@ -155,17 +163,17 @@ int main(int argc, char* argv[])
     {
         (app).parse(argc, argv);
 
-        if (dependancyProjectsOptRes.size() % 2 != 0)
+        if (dependancyProjectsOptRes.size() % 3 != 0)
         {
             throw CLI::ValidationError(
                 "--dependancy",
-                "Each project dependancy must have a project path and a target name"
+                "Each project dependancy must have project-path, unit-name and unit-type"
             );
         }
     }
-    catch (const CLI ::ParseError& e)
+    catch (const CLI::ParseError& e)
     {
-        return (app).exit(e);
+        return app.exit(e);
     }
 
     const auto parsedLogLevel = TryParseLogLevel(logLevel);
@@ -180,24 +188,23 @@ int main(int argc, char* argv[])
     ////////////////////////////
     /* Modify Options Results */
     ////////////////////////////
-
-    struct ProjectDependancy
-    {
-        fs::path projectPath;
-        std::string targetName;
-    };
-
+ 
     std::vector<ProjectDependancy> dependancyProjects;
-
-    for (size_t i = 0; i < dependancyProjectsOptRes.size(); i += 2)
+ 
+    if (dependancyProjectsOptRes.size() % 3 != 0)
+    {
+        Logger::Log(LogLevel::Error, "Each project dependancy must have project-path, unit-name and unit-type");
+        return EXIT_FAILURE;
+    }
+ 
+    for (size_t i = 0; i < dependancyProjectsOptRes.size(); i += 3)
     {
         dependancyProjects.push_back({
             .projectPath = fs::absolute(dependancyProjectsOptRes[i]),
-            .targetName = dependancyProjectsOptRes[i + 1]
+            .unitName = dependancyProjectsOptRes[i + 1],
+            .unitType = dependancyProjectsOptRes[i + 2]
         });
     }
-
-    unitRoot = fs::absolute(unitRoot);
 
     if (!fs::is_directory(unitRoot))
     {
@@ -283,6 +290,7 @@ int main(int argc, char* argv[])
             .unitName = unitName,
             .unitType = unitType,
             .buildTarget = buildTarget,
+            .dependancyProjects = dependancyProjects,
             .configurationFile = confFile,
             .platform = platform
         };
