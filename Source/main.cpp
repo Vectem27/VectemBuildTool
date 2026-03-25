@@ -15,6 +15,8 @@
 
 #include "Module/ModuleManager.h"
 
+#include "Helper.h"
+
 namespace fs = std::filesystem;
 
 // TODO: Made custom compile command from config file for extensibility)
@@ -156,8 +158,13 @@ int main(int argc, char* argv[])
         confFile = unitRoot / "BuildConfig.lua";
         if (!fs::exists(confFile))
         {
-            std::cerr << "Error: --config is not set and default config file doesn't exist. (Default config file : " << confFile << ")" << std::endl;
-            return EXIT_FAILURE;
+            confFile = GetScriptDir() / "BuildConfig.lua";
+
+            if (!fs::exists(confFile))
+            {
+                std::cerr << "Error: --config is not set and default config file doesn't exist. (Default config file : " << confFile << ")" << std::endl;
+                return EXIT_FAILURE;
+            }
         }
     }
     else
