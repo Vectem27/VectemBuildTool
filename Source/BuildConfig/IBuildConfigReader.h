@@ -13,5 +13,5 @@ class IBuildConfigReader
 {
 public:
     virtual ~IBuildConfigReader() = default;
-    virtual BuildConfig ReadBuildConfig(std::filesystem::path unitRoot) const = 0;
+    virtual BuildConfig ReadBuildConfig() const = 0;
 };

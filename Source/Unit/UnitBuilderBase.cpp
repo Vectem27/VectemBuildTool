@@ -45,7 +45,7 @@ void UnitBuilderBase::ReadConfiguration(sol::state& luaState, const BuildData& b
     Logger::Log(LogLevel::Debug, "Reading configuration for unit: %s", buildData.unitName.c_str());
 
     IBuildConfigReader* buildConfigReader = new BuildConfigReader(luaState);
-    unitsConfigs = buildConfigReader->ReadBuildConfig(buildData.unitRoot);
+    unitsConfigs = buildConfigReader->ReadBuildConfig();
     delete buildConfigReader;
 
     // Config Unit
@@ -102,7 +102,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, const UnitCon
         fs::path moduleDir;
         for (const fs::path& dir : unitConfig.modulesDirs)
         {
-            fs::path fullDir = dir / moduleRootName;
+            fs::path fullDir = buildData.unitRoot / dir / moduleRootName;
 
             Logger::Log(LogLevel::Debug, "Looking for module '%s' in directory: %s", moduleRules.name.c_str(), fullDir.string().c_str());
 

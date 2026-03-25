@@ -11,7 +11,7 @@ class BuildConfigReader : public IBuildConfigReader
 public:
     BuildConfigReader(sol::state& luaState) : lua(luaState) {}
 
-    virtual BuildConfig ReadBuildConfig(std::filesystem::path unitRoot) const override;
+    virtual BuildConfig ReadBuildConfig() const override;
 
 private:
     sol::state& lua;

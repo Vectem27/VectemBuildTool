@@ -21,6 +21,7 @@
 
 namespace fs = std::filesystem;
 
+// TODO: Move this part of code
 fs::path ResolveBuildOutput(const fs::path& unitRoot, const fs::path& configurationFile, const std::string& unitType,
                             const std::string& platform, const std::string& buildTarget)
 {
@@ -30,7 +31,7 @@ fs::path ResolveBuildOutput(const fs::path& unitRoot, const fs::path& configurat
     luaState.safe_script_file(configurationFile.string());
 
     BuildConfigReader buildConfigReader(luaState);
-    const BuildConfig buildConfig = buildConfigReader.ReadBuildConfig(unitRoot);
+    const BuildConfig buildConfig = buildConfigReader.ReadBuildConfig();
 
     for (const auto& unitConfig : buildConfig.unitsInfo)
     {

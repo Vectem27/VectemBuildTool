@@ -103,6 +103,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             ci.staticLibsToLink.emplace_back(groupPaths);
         }
 
+        // TODO: Add dependancies static libs to link 
+
         ExecutableCompileInfo eci(ci);
         eci.staticLibs = {};
         for (const auto& moduleRules : unitRules.modules)

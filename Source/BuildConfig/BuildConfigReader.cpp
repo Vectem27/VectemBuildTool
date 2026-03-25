@@ -7,7 +7,7 @@
 #include <sol/sol.hpp>
 #include <sol/table.hpp>
 
-BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) const
+BuildConfig BuildConfigReader::ReadBuildConfig() const
 {
     BuildConfig res;
 
@@ -61,7 +61,7 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
                 throw BuildConfigReaderException("Unit config 'ModulesDir' array is missing for '" + info.type + "'.");
 
             for (const auto& dir : modulesDirField.value())
-                info.modulesDirs.emplace_back(std::move(unitRoot / dir));
+                info.modulesDirs.emplace_back(std::move(dir));
 
             // Module Root Name
             sol::optional<std::string> moduleRootNameField =
