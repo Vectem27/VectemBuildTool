@@ -2,6 +2,7 @@
 #include "UnitRulesReader.h"
 #include "Unit/Unit.h"
 
+#include <sol/optional_implementation.hpp>
 #include <sol/sol.hpp>
 
 UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std::string& unitRulesFieldName) const 
@@ -18,6 +19,20 @@ UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std
         sol::table unitRules = unitRulesField.value();
 
         res.name = unitName;
+
+
+        // Compilation type
+        sol::optional<std::string> compilationType = unitRules["CompilationType"].get<sol::optional<std::string>>();
+        if (!compilationType)
+            throw UnitRulesReaderException("Unit compilation type is missing for : '" + unitName + "'.");
+
+        if (compilationType == "Executable")
+            res.compilationType = UnitCompilationType::Executable;
+        else if (compilationType == "Library")
+            res.compilationType = UnitCompilationType::Library;
+        else
+            throw UnitRulesReaderException("Unknown compilation type for unit '" + unitName + "': " + compilationType.value());
+
 
         sol::table modules = unitRules["Modules"];
         if (!modules.valid())
@@ -42,8 +57,6 @@ UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std
                                                     module.name + "'.");
 
             auto moduleRulesTable = value.as<sol::table>();
-
-            
 
             // Process module rules here if needed
         

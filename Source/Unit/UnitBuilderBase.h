@@ -82,10 +82,12 @@ protected:
      * @brief Read modules rules in a lua state
      * @warning The script should be executed before this function call
      *
-     * @param luaState The lua state
      * @param buildData The according build data
+     * @param unitConfig The unit configuration
+     * @param unitRulesFile The unit rules file path
+     * @param modules The list of modules to read rules for
      */
-    virtual void ReadModulesrules(const BuildData& buildData, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules);
+    virtual void ReadModulesrules(const BuildData& buildData, const UnitConfig& unitConfig, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules);
 
     /**
      * @brief Resolve a macro inside a string.
@@ -101,6 +103,8 @@ protected:
 
 protected:
     UnitRules FetchUnitRules(sol::state& luaState, const BuildData& buildData);
+
+    UnitConfig FetchUnitConfig(sol::state& luaState, const std::string& unitType);
 
 protected:
     IModuleManager& moduleManager;

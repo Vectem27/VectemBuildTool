@@ -4,6 +4,12 @@
 #include <string>
 #include <vector>
 
+enum class UnitCompilationType
+{
+    Executable,
+    Library
+};
+
 /**
  * @brief Structure holding modules info
  */
@@ -19,4 +25,5 @@ struct UnitRules
 {
     std::string name;
     std::vector<UnitModule> modules;
+    UnitCompilationType compilationType;
 };

@@ -2,6 +2,7 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
+#include <regex>
 
 #include <sol/sol.hpp>
 
@@ -77,37 +78,39 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         compiler->CompileLibrary(lci);
     }
 
-
-    // TODO: Add dependancies modules to link
-    std::vector<std::string> moduleList = moduleManager.GetModuleNames();
-
-    SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
-
-    CompileInfo ci = {.outputName = buildData.unitName,
-                      .buildOutputPath = buildOutput,
-                      .filesToCompile = {},
-                      .includesPaths = {},
-                      .bAddDebugInfo = targetRules.bAddDebugInfo,
-                      .cVersion = targetRules.cVersion,
-                      .cppVersion = targetRules.cppVersion,
-                      .supportedPlatforms = targetRules.supportedPlatforms,
-                      .optimisation = targetRules.optimisationType,
-                      .floatingPointModel = targetRules.floatingPointType};
-
-    for (const auto& group : sortedModules)
+    if (unitRules.compilationType == UnitCompilationType::Executable)
     {
-        std::vector<std::filesystem::path> groupPaths;
-        for (const auto& module : group)
-            groupPaths.emplace_back(buildOutput / "lib" / module);
-        ci.staticLibsToLink.emplace_back(groupPaths);
+        std::vector<std::string> moduleList = moduleManager.GetModuleNames();
+
+        SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
+
+        CompileInfo ci = {.outputName = buildData.unitName,
+                        .buildOutputPath = buildOutput,
+                        .filesToCompile = {},
+                        .includesPaths = {},
+                        .bAddDebugInfo = targetRules.bAddDebugInfo,
+                        .cVersion = targetRules.cVersion,
+                        .cppVersion = targetRules.cppVersion,
+                        .supportedPlatforms = targetRules.supportedPlatforms,
+                        .optimisation = targetRules.optimisationType,
+                        .floatingPointModel = targetRules.floatingPointType};
+
+        for (const auto& group : sortedModules)
+        {
+            std::vector<std::filesystem::path> groupPaths;
+            for (const auto& module : group)
+                groupPaths.emplace_back(buildOutput / "lib" / module);
+            ci.staticLibsToLink.emplace_back(groupPaths);
+        }
+
+        ExecutableCompileInfo eci(ci);
+        eci.staticLibs = {};
+        for (const auto& moduleRules : unitRules.modules)
+            eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
+
+        compiler->CompileExecutable(eci);
     }
-
-    ExecutableCompileInfo eci(ci);
-    eci.staticLibs = {};
-    for (const auto& moduleRules : unitRules.modules)
-        eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
-
-    compiler->CompileExecutable(eci);
+    
     delete compiler;
 }
 
@@ -127,9 +130,19 @@ void UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, 
         .platform = buildData.platform
     };
 
+    luaState.safe_script_file(dependancyBuildData.configurationFile.string());
+
+    UnitConfig unitConfig = FetchUnitConfig(luaState, dependancyBuildData.unitType);
+
+    // Unit rules file name
+
+    std::string unitFileName = unitConfig.unitFileName;
+    unitFileName = std::regex_replace(unitFileName, std::regex(R"(\$\{UnitName\})"), dependancyBuildData.unitName);
+    std::filesystem::path unitRulesFile = dependancyBuildData.unitRoot / unitFileName;
+
+    luaState.safe_script_file(unitRulesFile.string());
+
     auto unitRules = FetchUnitRules(luaState, dependancyBuildData);
 
-    std::filesystem::path unitRulesFile = dependancyBuildData.unitRoot / unitConfig.unitFileName;
-
-    ReadModulesrules(dependancyBuildData, unitRulesFile.string(), unitRules.modules);
+    ReadModulesrules(dependancyBuildData, unitConfig, unitRulesFile, unitRules.modules);
 }

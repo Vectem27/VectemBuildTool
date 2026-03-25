@@ -200,7 +200,7 @@ BuildConfig = BuildConfigSet({
         
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
-        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleFileName  = "${ModuleName}.Module.lua",
         ModuleClassName = "${ModuleName}ModuleRules",
 
         TargetsDir = "Targets",
@@ -225,7 +225,7 @@ BuildConfig = BuildConfigSet({
 
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
-        ModuleFileName  = "${ModuleName.Build.lua}",
+        ModuleFileName  = "${ModuleName}.Module.lua",
         ModuleClassName = "${ModuleName}ModuleRules",
         BuildDir = "Build",
         SubUnits = {}
@@ -288,17 +288,17 @@ end
 -- Units rules base
 
 local ProgramDefaultRules = RuleSet({
-    UnitCompilationType = UnitCompilationTypes.Executable,
+    CompilationType = UnitCompilationTypes.Executable,
     Modules = {}
 })
 
 local EngineDefaultRules = RuleSet({
-    UnitCompilationType = UnitCompilationTypes.Library,
+    CompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
-    UnitCompilationType = UnitCompilationTypes.Library,
+    CompilationType = UnitCompilationTypes.Library,
     Modules = {}
 })
 

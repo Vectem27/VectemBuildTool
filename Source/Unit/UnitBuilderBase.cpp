@@ -4,6 +4,7 @@
 
 #include <sol/sol.hpp>
 
+#include "BuildConfig/BuildConfig.h"
 #include "BuildConfig/BuildConfigReader.h"
 #include "Core/Logger.hpp"
 #include "Target/TargetRulesReader.h"
@@ -35,7 +36,7 @@ void UnitBuilderBase::BuildUnit(const BuildData& buildData)
         ReadTarget(targetLua, buildData);
     }
 
-    ReadModulesrules(buildData, unitRulesFile, unitRules.modules);
+    ReadModulesrules(buildData, unitConfig, unitRulesFile, unitRules.modules);
 }
 
 
@@ -48,17 +49,7 @@ void UnitBuilderBase::ReadConfiguration(sol::state& luaState, const BuildData& b
     delete buildConfigReader;
 
     // Config Unit
-    for (const auto& unit : unitsConfigs.unitsInfo)
-    {
-        if (unit.type != buildData.unitType)
-            continue;
-
-        unitConfig = unit;
-        break;
-    }
-
-    if (unitConfig.type.empty())
-        throw UnitBuilderException("No config set for unit type : '" + unitConfig.type + "'.");
+    unitConfig = FetchUnitConfig(luaState, buildData.unitType);
 
     // Unit rules file name
 
@@ -80,7 +71,7 @@ void UnitBuilderBase::ReadUnitRules(sol::state& luaState, const BuildData& build
     {
         std::string buildTargetFileName = unitConfig.targetFileName;
         buildTargetFileName = std::regex_replace(buildTargetFileName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
-        buildTargetFile = unitConfig.targetsDir / buildTargetFileName;
+        buildTargetFile = buildData.unitRoot / unitConfig.targetsDir / buildTargetFileName;
     }
 }
 
@@ -92,7 +83,7 @@ void UnitBuilderBase::ReadTarget(sol::state& luaState, const BuildData& buildDat
     delete targetRulesReader;
 }
 
-void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules)
+void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, const UnitConfig& unitConfig, std::filesystem::path unitRulesFile, const std::vector<UnitModule>& modules)
 {
     if (unitConfig.modulesDirs.empty())
         throw UnitBuilderException("Module dir is empty for the config unit : '" + unitConfig.type + "'.");
@@ -160,4 +151,22 @@ UnitRules UnitBuilderBase::FetchUnitRules(sol::state& luaState, const BuildData&
 { 
     std::unique_ptr<IUnitRulesReader> unitRulesReader = std::make_unique<UnitRulesReader>(luaState);
     return unitRulesReader->ReadUnitsRules(buildData.unitName, ResolveMacro(unitConfig.unitClassName, "UnitName", buildData.unitName));
+}
+
+UnitConfig UnitBuilderBase::FetchUnitConfig(sol::state& luaState, const std::string& unitType) 
+{ 
+    // Config Unit
+    for (const auto& unit : unitsConfigs.unitsInfo)
+    {
+        if (unit.type != unitType)
+            continue;
+
+        unitConfig = unit;
+        break;
+    }
+
+    if (unitConfig.type.empty())
+        throw UnitBuilderException("No config set for unit type : '" + unitType + "'.");
+
+    return unitConfig;
 }

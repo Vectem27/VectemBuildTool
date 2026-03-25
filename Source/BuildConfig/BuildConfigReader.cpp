@@ -88,7 +88,7 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
             sol::optional<std::string> targetsDirField;
             targetsDirField = infoTable["TargetsDir"].get<sol::optional<std::string>>();
             if (targetsDirField)
-                info.targetsDir = unitRoot / targetsDirField.value();
+                info.targetsDir = targetsDirField.value();
 
             sol::optional<std::string> targetFileNameField;
             targetFileNameField = infoTable["TargetFileName"].get<sol::optional<std::string>>();
@@ -105,7 +105,7 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
             buildDirField = infoTable["BuildDir"].get<sol::optional<std::string>>();
             if (!buildDirField)
                 throw BuildConfigReaderException("Unit config 'BuildDir' field is missing for '" + info.type + "'.");
-            info.buildDir = unitRoot / buildDirField.value();
+            info.buildDir = buildDirField.value();
 
 
             // Sub units
@@ -139,7 +139,7 @@ BuildConfig BuildConfigReader::ReadBuildConfig(std::filesystem::path unitRoot) c
                     throw BuildConfigReaderException( "Unit : A sub-unit config 'UnitType' field is missing for '" + info.type + "'.");
                 subUnitConfig.unitType = subUnitTypeField.value();
 
-                // Unit Type
+                // Unit Root Name
                 sol::optional<std::string> subUnitRootNameField;
                 subUnitRootNameField = subUnit["UnitRootName"].get<sol::optional<std::string>>();
                 if (!subUnitRootNameField)
