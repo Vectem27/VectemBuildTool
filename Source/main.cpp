@@ -1,5 +1,4 @@
 #include <cstdlib>
-#include <iostream>
 #include <string>
 #include <filesystem>
 #include <vector>
@@ -7,6 +6,8 @@
 #include <sol/sol.hpp>
 #include <CLI/CLI11.hpp>
 
+#include "BuildConfig/BuildConfigReader.h"
+#include "Core/Logger.hpp"
 #include "Compiler/ClangCompiler.h"
 #include "Unit/UnitBuilder.h"
 
@@ -18,6 +19,44 @@
 #include "Helper.h"
 
 namespace fs = std::filesystem;
+
+fs::path ResolveBuildOutput(const fs::path& unitRoot, const fs::path& configurationFile, const std::string& unitType,
+                            const std::string& platform, const std::string& buildTarget)
+{
+    sol::state luaState;
+    luaState.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine,
+                            sol::lib::io);
+    luaState.safe_script_file(configurationFile.string());
+
+    BuildConfigReader buildConfigReader(luaState);
+    const BuildConfig buildConfig = buildConfigReader.ReadBuildConfig(unitRoot);
+
+    for (const auto& unitConfig : buildConfig.unitsInfo)
+    {
+        if (unitConfig.type == unitType)
+            return unitConfig.buildDir / platform / buildTarget;
+    }
+
+    throw std::runtime_error("No config set for unit type: " + unitType);
+}
+
+void SetupBuildLogFile(const fs::path& buildOutput)
+{
+    fs::create_directories(buildOutput);
+
+    const fs::path buildLogFile = buildOutput / "build.log";
+    const fs::path backupLogFile = buildOutput / "build.backup.log";
+
+    Logger::ClearOutputFile();
+
+    if (fs::exists(backupLogFile))
+        fs::remove(backupLogFile);
+
+    if (fs::exists(buildLogFile))
+        fs::rename(buildLogFile, backupLogFile);
+
+    Logger::SetOutputFile(buildLogFile);
+}
 
 // TODO: Made custom compile command from config file for extensibility)
 
@@ -42,6 +81,7 @@ int main(int argc, char* argv[])
 
     fs::path confFile;
     std::string platform;
+    std::string logLevel = "info";
     
     std::vector<std::string> dependancyProjectsOptRes;
 
@@ -71,6 +111,8 @@ int main(int argc, char* argv[])
 
     app.add_option("-p, --platform", platform, "The build platform")
        ->check(CLI::ExistingPath);
+
+    app.add_option("-l, --log-level", logLevel, "Minimum log level (critical, error, warning, info, debug, trace)");
 
     app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-type target-name)")
        ->each([](const std::string& input) -> std::string {
@@ -125,6 +167,15 @@ int main(int argc, char* argv[])
         return (app).exit(e);
     }
 
+    const auto parsedLogLevel = TryParseLogLevel(logLevel);
+    if (!parsedLogLevel.has_value())
+    {
+        Logger::Log(LogLevel::Error, "Invalid log level: %s", logLevel.c_str());
+        return EXIT_FAILURE;
+    }
+
+    Logger::SetLevel(*parsedLogLevel);
+
     ////////////////////////////
     /* Modify Options Results */
     ////////////////////////////
@@ -149,7 +200,7 @@ int main(int argc, char* argv[])
 
     if (!fs::is_directory(unitRoot))
     {
-        std::cerr << "Error: Unit root doesn't exists." << std::endl;
+        Logger::Log(LogLevel::Error, "Unit root doesn't exist: %s", unitRoot.string().c_str());
         return EXIT_FAILURE;
     }
 
@@ -162,7 +213,11 @@ int main(int argc, char* argv[])
 
             if (!fs::exists(confFile))
             {
-                std::cerr << "Error: --config is not set and default config file doesn't exist. (Default config file : " << confFile << ")" << std::endl;
+                Logger::Log(
+                    LogLevel::Error,
+                    "--config is not set and the default config file doesn't exist. Default config file: %s",
+                    confFile.string().c_str()
+                );
                 return EXIT_FAILURE;
             }
         }
@@ -172,14 +227,14 @@ int main(int argc, char* argv[])
         confFile = fs::absolute(confFile);
         if (!fs::exists(confFile))
         {
-            std::cerr << "Error: Build config file doesn't exist." << std::endl;
+            Logger::Log(LogLevel::Error, "Build config file doesn't exist: %s", confFile.string().c_str());
             return EXIT_FAILURE;
         }
     }
 
     if (!fs::is_regular_file(confFile))
     {
-        std::cerr << "Error: Build config path is not a valid file" << std::endl;
+        Logger::Log(LogLevel::Error, "Build config path is not a valid file: %s", confFile.string().c_str());
         return EXIT_FAILURE;
     }
 
@@ -195,12 +250,25 @@ int main(int argc, char* argv[])
 #endif
     }
 
+    try
+    {
+        const fs::path buildOutput = ResolveBuildOutput(unitRoot, confFile, unitType, platform, buildTarget);
+        SetupBuildLogFile(buildOutput);
+    }
+    catch (const std::exception& exception)
+    {
+        Logger::Log(LogLevel::Critical, "%s", exception.what());
+        return EXIT_FAILURE;
+    }
+
     /////////////////
     /* Run Program */
     /////////////////
 
     try
     {
+        Logger::Log(LogLevel::Info, "Starting build for unit '%s' (%s, target %s)", unitName.c_str(), unitType.c_str(), buildTarget.c_str());
+
         ClangCompilerFactory compilerFactory = ClangCompilerFactory();
         ModuleIncludeSolver modIncSolver = ModuleIncludeSolver();
         ModuleGraphDependencySorter modDepSorter = ModuleGraphDependencySorter();
@@ -219,12 +287,20 @@ int main(int argc, char* argv[])
 
         builder.BuildUnit(buildData);
 
+        Logger::Log(LogLevel::Info, "Build completed successfully for unit '%s'", unitName.c_str());
+
         return EXIT_SUCCESS;
     }
-    catch (std::string e)
+    catch (const std::string& error)
     {
-        std::cerr << "Error : " << e << std::endl;
+        Logger::Log(LogLevel::Critical, "Build failed: %s", error.c_str());
+        return EXIT_FAILURE;
+    }
+    catch (const std::exception& exception)
+    {
+        Logger::Log(LogLevel::Critical, "Build failed: %s", exception.what());
+        return EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
 }

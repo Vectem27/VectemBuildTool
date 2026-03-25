@@ -2,12 +2,14 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include <iostream>
 #include <filesystem>
 #include <cstdlib>
+#include <stdexcept>
 #include <vector>
 #include <sstream>
 #include <windows.h>
+
+#include "Core/Logger.hpp"
 
 namespace fs = std::filesystem;
 
@@ -24,7 +26,7 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
     ss << "Starting command : ";
     for (const auto& arg : argStrings)
         ss << " " << arg;
-    std::cout << ss.str() << std::endl;
+    Logger::Log(LogLevel::Debug, "%s", ss.str().c_str());
 
     std::string command;
     command += QuoteIfNeeded(exePath.string());
@@ -37,7 +39,10 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 
     int ret = std::system(command.c_str());
     if (ret != 0)
-        std::cerr << "Command failed with code " << ret << std::endl;
+    {
+        Logger::Log(LogLevel::Error, "Command failed with code %d", ret);
+        throw std::runtime_error("Command failed with code " + std::to_string(ret) + ": " + exePath.string());
+    }
 }
 
 void MsvcCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const

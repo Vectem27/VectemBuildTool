@@ -1,10 +1,12 @@
 #include "ClangCompiler.h"
 
-#include <iostream>
 #include <filesystem>
 #include <cstdlib>
+#include <stdexcept>
 #include <vector>
 #include <sstream>
+
+#include "Core/Logger.hpp"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -30,7 +32,7 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
     ss << "Starting command : ";
     for (const auto& arg : argStrings)
         ss << " " << arg;
-    std::cout << ss.str() << std::endl;
+    Logger::Log(LogLevel::Debug, "%s", ss.str().c_str());
 
 #ifdef _WIN32
     std::string command;
@@ -44,7 +46,10 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 
     int ret = std::system(command.c_str());
     if (ret != 0)
-        std::cerr << "Command failed with code " << ret << std::endl;
+    {
+        Logger::Log(LogLevel::Error, "Command failed with code %d", ret);
+        throw std::runtime_error("Command failed with code " + std::to_string(ret) + ": " + exePath.string());
+    }
 #else
     std::vector<char*> args;
     for (auto& s : argStrings)
@@ -52,6 +57,11 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
     args.push_back(nullptr);
 
     pid_t pid = fork();
+    if (pid < 0)
+    {
+        throw std::runtime_error("Unable to fork process for command: " + exePath.string());
+    }
+
     if (pid == 0)
     {
         execvp(exePath.c_str(), args.data());
@@ -60,8 +70,29 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
     }
     else
     {
-        wait(nullptr);
-        std::cout << "Command finished\n";
+        int status = 0;
+        if (waitpid(pid, &status, 0) < 0)
+        {
+            throw std::runtime_error("Unable to wait for command: " + exePath.string());
+        }
+
+        if (WIFEXITED(status))
+        {
+            const int exitCode = WEXITSTATUS(status);
+            if (exitCode != 0)
+            {
+                Logger::Log(LogLevel::Error, "Command failed with code %d", exitCode);
+                throw std::runtime_error("Command failed with code " + std::to_string(exitCode) + ": " + exePath.string());
+            }
+        }
+        else if (WIFSIGNALED(status))
+        {
+            const int signalCode = WTERMSIG(status);
+            Logger::Log(LogLevel::Error, "Command terminated by signal %d", signalCode);
+            throw std::runtime_error("Command terminated by signal " + std::to_string(signalCode) + ": " + exePath.string());
+        }
+
+        Logger::Log(LogLevel::Debug, "Command finished");
     }
 #endif
 }

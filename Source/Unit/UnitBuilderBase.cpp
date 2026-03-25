@@ -1,11 +1,11 @@
 #include "UnitBuilderBase.h"
 
 #include <regex>
-#include <iostream>
 
 #include <sol/sol.hpp>
 
 #include "BuildConfig/BuildConfigReader.h"
+#include "Core/Logger.hpp"
 #include "Target/TargetRulesReader.h"
 
 #include "Module/ModuleInfoReader.h"
@@ -41,7 +41,7 @@ void UnitBuilderBase::BuildUnit(const BuildData& buildData)
 
 void UnitBuilderBase::ReadConfiguration(sol::state& luaState, const BuildData& buildData)
 {
-    std::cout << buildData.unitName << std::endl;
+    Logger::Log(LogLevel::Debug, "Reading configuration for unit: %s", buildData.unitName.c_str());
 
     IBuildConfigReader* buildConfigReader = new BuildConfigReader(luaState);
     unitsConfigs = buildConfigReader->ReadBuildConfig(buildData.unitRoot);
@@ -118,7 +118,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData)
         {
             fs::path fullDir = dir / moduleRootName;
 
-            std::cout << "Looking for module '" << moduleRules.name << "' in directory : " << fullDir << std::endl;
+            Logger::Log(LogLevel::Debug, "Looking for module '%s' in directory: %s", moduleRules.name.c_str(), fullDir.string().c_str());
 
             if (fs::exists(fullDir) && fs::is_directory(fullDir))
             {

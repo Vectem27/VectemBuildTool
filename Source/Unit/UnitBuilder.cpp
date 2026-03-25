@@ -2,10 +2,10 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
-#include <iostream>
 
 #include <sol/sol.hpp>
 
+#include "Core/Logger.hpp"
 #include "Compiler/ICompiler.h"
 #include "Module/IModuleDependencySorter.h"
 #include "Module/IModuleManager.h"
@@ -52,7 +52,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         }
 
         // Compile
-        std::cout << "Start module compilation : " << moduleRules.name << std::endl;
+        Logger::Log(LogLevel::Info, "Start module compilation: %s", moduleRules.name.c_str());
 
         CompileInfo ci = {.outputName = moduleRules.name,
                           .buildOutputPath = buildOutput,

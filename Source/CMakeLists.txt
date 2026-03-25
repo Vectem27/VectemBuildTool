@@ -1,3 +1,5 @@
+add_subdirectory(Core)
+
 add_executable(VectemBuildTool 
     main.cpp
 
@@ -19,3 +21,4 @@ add_executable(VectemBuildTool
 )
 
 target_include_directories(VectemBuildTool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(VectemBuildTool PRIVATE Core)
