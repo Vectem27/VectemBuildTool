@@ -7,6 +7,7 @@
 #include <CLI/CLI11.hpp>
 
 #include "BuildConfig/BuildConfigReader.h"
+#include "Compiler/CompileCommandsExporter.h"
 #include "Core/Logger.hpp"
 #include "Compiler/ClangCompiler.h"
 #include "Unit/UnitBuilder.h"
@@ -254,6 +255,7 @@ int main(int argc, char* argv[])
     {
         const fs::path buildOutput = ResolveBuildOutput(unitRoot, confFile, unitType, platform, buildTarget);
         SetupBuildLogFile(buildOutput);
+        CompileCommandsExporter::Reset(buildOutput);
     }
     catch (const std::exception& exception)
     {

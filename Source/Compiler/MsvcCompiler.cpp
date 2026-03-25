@@ -9,6 +9,7 @@
 #include <sstream>
 #include <windows.h>
 
+#include "Compiler/CompileCommandsExporter.h"
 #include "Core/Logger.hpp"
 
 namespace fs = std::filesystem;
@@ -138,6 +139,7 @@ void MsvcCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
         args.push_back("/Fo" + objFile.string());
 
         objects.push_back(objFile);
+        CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
         ExecuteCommand(msvcPath, args);
     }
 

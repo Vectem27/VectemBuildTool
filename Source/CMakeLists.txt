@@ -9,6 +9,7 @@ add_executable(VectemBuildTool
     Module/ModuleIncludeSolver.cpp
     
     Compiler/ClangCompiler.cpp
+    Compiler/CompileCommandsExporter.cpp
     Compiler/MsvcCompiler.cpp
 
     Unit/UnitBuilderBase.cpp

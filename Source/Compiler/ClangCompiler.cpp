@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 
+#include "Compiler/CompileCommandsExporter.h"
 #include "Core/Logger.hpp"
 
 #ifdef _WIN32
@@ -237,6 +238,7 @@ void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
         args.push_back(objFile.string());
 
         objects.push_back(objFile);
+        CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
         ExecuteCommand(clangPath, args);
     }
 
