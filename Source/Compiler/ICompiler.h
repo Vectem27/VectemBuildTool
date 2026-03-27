@@ -32,6 +32,8 @@ struct CompileInfo
     CompilationOptimisation optimisation = CompilationOptimisation::STANDARD;
     FloatingPointModel floatingPointModel = FloatingPointModel::PRECISE;
     
+    std::vector<std::filesystem::path> staticLibPaths;
+
     std::list<std::vector<std::filesystem::path>> staticLibsToLink;
     std::vector<std::filesystem::path> dynamicLibsToLink;
 };
@@ -41,7 +43,7 @@ struct CompileInfo
  */
 struct ExecutableCompileInfo : CompileInfo
 {
-    std::vector<std::filesystem::path> staticLibs;
+    std::vector<std::filesystem::path> libPaths;
 };
 
 /**

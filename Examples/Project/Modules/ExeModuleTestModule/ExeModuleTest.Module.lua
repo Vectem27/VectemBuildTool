@@ -1,3 +1,3 @@
 ExeModuleTestModuleRules = Module({
-    PrivateDependencies = {"ModuleTest"},
+    PrivateDependencies = {"ModuleTest", "EngineModuleTest"},
 })

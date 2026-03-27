@@ -135,6 +135,7 @@ void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
 
 #ifdef _WIN32
     // Static libs (.lib) : full path
+    /*
     for (const auto& libPath : compileInfo.staticLibs)
     {
         fs::path fullLibPath = libPath;
@@ -145,11 +146,10 @@ void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) 
         argStrings.push_back(fullLibPath.string());
     }
 
-    fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");
+    fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");*/
 #else
-    for (const auto& group : compileInfo.staticLibsToLink)
-        for(const auto& libPath : group)
-        argStrings.push_back("-L" + libPath.parent_path().string());
+    for (const auto& path : compileInfo.staticLibPaths)
+            argStrings.push_back("-L" + path.string());
 
     for (const auto& group : compileInfo.staticLibsToLink)
     {

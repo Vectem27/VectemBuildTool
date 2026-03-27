@@ -5,6 +5,7 @@
 ThirdParty/lua-*/lib
 
 bin/
+lib/
 
 # Configuration
 .vscode/

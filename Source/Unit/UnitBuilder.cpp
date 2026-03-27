@@ -5,6 +5,7 @@
 #include <regex>
 
 #include <sol/sol.hpp>
+#include <vector>
 
 #include "Core/Logger.hpp"
 #include "Compiler/ICompiler.h"
@@ -31,10 +32,14 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     // TODO: Add sub folder to copy (For script for example)
     // TODO: Add native external libraries support
 
+    std::vector<DependancyProcessingResult> dependanciesData;
+    dependanciesData.reserve(buildData.dependancyProjects.size());
     for (const auto& dependancy : buildData.dependancyProjects)
     {
         Logger::Log(LogLevel::Info, "Fetch dependancy project: %s", dependancy.unitName.c_str());
-        ProcessDependancyProject(dependancy, buildData);
+        auto res = ProcessDependancyProject(dependancy, buildData);
+
+        dependanciesData.emplace_back(std::move(res));
     }
 
     fs::create_directories(buildOutput);
@@ -103,12 +108,20 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             ci.staticLibsToLink.emplace_back(groupPaths);
         }
 
+        ci.staticLibPaths.emplace_back(buildOutput / "lib");
+
+        for (const auto& depData : dependanciesData)
+        ci.staticLibPaths.emplace_back(depData.libDir);
+            
+
+
         // TODO: Add dependancies static libs to link 
 
         ExecutableCompileInfo eci(ci);
-        eci.staticLibs = {};
-        for (const auto& moduleRules : unitRules.modules)
-            eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
+        //eci.staticLibs = {};
+        //for (const auto& moduleRules : unitRules.modules)
+        //    eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
+
 
         compiler->CompileExecutable(eci);
     }
@@ -116,8 +129,10 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     delete compiler;
 }
 
-void UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, const BuildData& buildData) 
+UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, const BuildData& buildData) 
 {
+    DependancyProcessingResult res;
+
     // Prepare a Lua state for the dependency and read its build config + unit rules
     sol::state luaState;
     luaState.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
@@ -132,11 +147,16 @@ void UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, 
         .platform = buildData.platform
     };
 
+
     luaState.safe_script_file(dependancyBuildData.configurationFile.string());
 
     UnitConfig unitConfig = FetchUnitConfig(luaState, dependancyBuildData.unitType);
 
     // Unit rules file name
+    auto buildOutput = dependancyBuildData.unitRoot / unitConfig.buildDir / dependancyBuildData.platform / dependancyBuildData.buildTarget;
+
+    res.libDir = buildOutput / "lib";
+
 
     std::string unitFileName = unitConfig.unitFileName;
     unitFileName = std::regex_replace(unitFileName, std::regex(R"(\$\{UnitName\})"), dependancyBuildData.unitName);
@@ -147,4 +167,5 @@ void UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, 
     auto unitRules = FetchUnitRules(luaState, dependancyBuildData);
 
     ReadModulesrules(dependancyBuildData, unitConfig, unitRulesFile, unitRules.modules);
+    return res;
 }

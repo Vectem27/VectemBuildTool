@@ -262,8 +262,8 @@ int main(int argc, char* argv[])
     try
     {
         const fs::path buildOutput = ResolveBuildOutput(unitRoot, confFile, unitType, platform, buildTarget);
-        SetupBuildLogFile(buildOutput);
-        CompileCommandsExporter::Reset(buildOutput);
+        SetupBuildLogFile(unitRoot / buildOutput);
+        CompileCommandsExporter::Reset(unitRoot / buildOutput);
     }
     catch (const std::exception& exception)
     {
