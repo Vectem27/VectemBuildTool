@@ -182,11 +182,12 @@ std::filesystem::path UnitBuilderBase::GetBuildDir(std::filesystem::path unitRoo
     return unitRoot / unitConfig.buildDir;
 }
 
-std::filesystem::path UnitBuilderBase::GetBuildOutputDir(UnitConfig unitConfig, const BuildData& buildData) 
+std::filesystem::path UnitBuilderBase::GetBuildOutputDir(const BuildData& buildData) 
 {
+    auto unitConfig = GetUnitConfig(buildData.unitType);
     return GetBuildDir(buildData.unitRoot, unitConfig) / buildData.platform / buildData.buildTarget;
 }
-std::filesystem::path UnitBuilderBase::GetStaticLibOutputDir(UnitConfig unitConfig, const BuildData& buildConfig) 
+std::filesystem::path UnitBuilderBase::GetStaticLibOutputDir(const BuildData& buildConfig) 
 {
-    return GetBuildOutputDir(unitConfig, buildConfig) / "lib";
+    return GetBuildOutputDir(buildConfig) / "lib";
 }

@@ -127,7 +127,7 @@ public: // Helper
      * @param buildConfig
      * @return std::filesystem::path 
      */
-    std::filesystem::path GetBuildOutputDir(UnitConfig unitConfig, const BuildData& buildConfig);
+    std::filesystem::path GetBuildOutputDir(const BuildData& buildConfig);
 
     /**
      * @brief Get the static library output directory path
@@ -137,7 +137,7 @@ public: // Helper
      * @param buildConfig 
      * @return std::filesystem::path 
      */
-    std::filesystem::path GetStaticLibOutputDir(UnitConfig unitConfig, const BuildData& buildConfig);
+    std::filesystem::path GetStaticLibOutputDir(const BuildData& buildConfig);
 
 protected:
     IModuleManager& moduleManager;

@@ -2,7 +2,6 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
-#include <regex>
 
 #include <sol/sol.hpp>
 #include <vector>
@@ -42,7 +41,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         dependanciesData.emplace_back(std::move(res));
     }
 
-    auto buildOutput = GetBuildOutputDir(GetUnitConfig(buildData.unitType), buildData);
+    auto buildOutput = GetBuildOutputDir(buildData);
 
     fs::create_directories(buildOutput);
 
@@ -136,8 +135,7 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
     DependancyProcessingResult res;
 
     // Prepare a Lua state for the dependency and read its build config + unit rules
-    sol::state luaState;
-    luaState.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
+    sol::state luaState = NewBuilderLuaState();
 
     BuildData dependancyBuildData = {
         .unitRoot = dependancy.projectPath,
@@ -150,19 +148,11 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
     };
 
 
-    luaState.safe_script_file(dependancyBuildData.configurationFile.string());
-
     UnitConfig unitConfig = GetUnitConfig(dependancyBuildData.unitType);
 
-    // Unit rules file name
-    auto buildOutput = dependancyBuildData.unitRoot / unitConfig.buildDir / dependancyBuildData.platform / dependancyBuildData.buildTarget;
+    res.libDir = GetStaticLibOutputDir(dependancyBuildData);
 
-    res.libDir = buildOutput / "lib";
-
-
-    std::string unitFileName = unitConfig.unitFileName;
-    unitFileName = std::regex_replace(unitFileName, std::regex(R"(\$\{UnitName\})"), dependancyBuildData.unitName);
-    std::filesystem::path unitRulesFile = dependancyBuildData.unitRoot / unitFileName;
+    std::filesystem::path unitRulesFile = GetUnitRulesFile(dependancyBuildData);
 
     luaState.safe_script_file(unitRulesFile.string());
 
