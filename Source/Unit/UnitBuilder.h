@@ -19,8 +19,12 @@ protected:
     };
     
 public:
-    UnitBuilder(IModuleManager& moduleManager, const ICompilerFactory& compilerFactory, const IModuleDependencySorter& moduleDepSorter,
-                const IModuleIncludeSolver& moduleIncSolver);
+    UnitBuilder(IModuleManager& moduleManager, 
+        const std::filesystem::path& buildConfigFile, 
+        const ICompilerFactory& compilerFactory, 
+        const IModuleDependencySorter& moduleDepSorter,
+        const IModuleIncludeSolver& moduleIncSolver
+    );
 
     virtual void BuildUnit(const BuildData& buildData) override;
 

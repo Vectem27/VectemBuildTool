@@ -16,9 +16,9 @@
 
 namespace fs = std::filesystem;
 
-UnitBuilder::UnitBuilder(IModuleManager& moduleManager, const ICompilerFactory& compilerFactory, const IModuleDependencySorter& moduleDepSorter,
+UnitBuilder::UnitBuilder(IModuleManager& moduleManager, const fs::path& buildConfigFile, const ICompilerFactory& compilerFactory, const IModuleDependencySorter& moduleDepSorter,
                          const IModuleIncludeSolver& moduleIncSolver)
-    : UnitBuilderBase(moduleManager), compilerFactory(compilerFactory), moduleDepSorter(moduleDepSorter), moduleIncSolver(moduleIncSolver)
+    : UnitBuilderBase(moduleManager, buildConfigFile), compilerFactory(compilerFactory), moduleDepSorter(moduleDepSorter), moduleIncSolver(moduleIncSolver)
 {
 
 }
@@ -41,6 +41,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
         dependanciesData.emplace_back(std::move(res));
     }
+
+    auto buildOutput = GetBuildOutputDir(GetUnitConfig(buildData.unitType), buildData);
 
     fs::create_directories(buildOutput);
 
@@ -150,7 +152,7 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
 
     luaState.safe_script_file(dependancyBuildData.configurationFile.string());
 
-    UnitConfig unitConfig = FetchUnitConfig(luaState, dependancyBuildData.unitType);
+    UnitConfig unitConfig = GetUnitConfig(dependancyBuildData.unitType);
 
     // Unit rules file name
     auto buildOutput = dependancyBuildData.unitRoot / unitConfig.buildDir / dependancyBuildData.platform / dependancyBuildData.buildTarget;

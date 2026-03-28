@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
         ModuleGraphDependencySorter modDepSorter = ModuleGraphDependencySorter();
         ModuleManager moduleManager = ModuleManager();
 
-        UnitBuilder builder = UnitBuilder(moduleManager, compilerFactory, modDepSorter, modIncSolver);
+        UnitBuilder builder = UnitBuilder(moduleManager, confFile, compilerFactory, modDepSorter, modIncSolver);
 
         BuildData buildData {
             .unitRoot = unitRoot,

@@ -45,30 +45,10 @@ private:
 class UnitBuilderBase
 {
 public:
-    UnitBuilderBase(IModuleManager& moduleManager) 
-        : moduleManager(moduleManager) 
-    {}
+    UnitBuilderBase(IModuleManager& moduleManager, const std::filesystem::path& buildConfigFile);
 
     virtual void BuildUnit(const BuildData& buildData);
 protected:
-    /**
-     * @brief Read configutation data in a lua state
-     * @warning The script should be executed before this function call
-     *
-     * @param luaState The lua state
-     * @param buildData The according build data
-     */
-    virtual void ReadConfiguration(sol::state& luaState, const BuildData& buildData);
-
-    /**
-     * @brief Read the target data in a lua state
-     * @warning The script should be executed before this function call
-     *
-     * @param luaState The lua state
-     * @param buildData The according build data
-     */
-    virtual void ReadTarget(sol::state& luaState, const BuildData& buildData);
-
     /**
      * @brief Read the unit rules in a lua state
      * @warning The script should be executed before this function call
@@ -102,21 +82,72 @@ protected:
     virtual std::string ResolveMacro(const std::string& str, const std::string& macroName, const std::string& value);
 
 protected:
+    /**
+     * @brief Create a new lua state object from sol library.
+     * The build config script is automaticaly executed.
+     * 
+     * @return The lua state
+     */
+    sol::state NewBuilderLuaState() const;
+
+    /**
+     * @brief Get the suitable unit config for a specific unit type.
+     * 
+     * @param unitType The unit type
+     * @return The corresponding unit config 
+     */
+    UnitConfig GetUnitConfig(const std::string& unitType) const;
+
+    /**
+     * @brief Get the unit rule file path for a build.
+     * 
+     * @param buildData The build data
+     * @return The file path
+     */
+    std::filesystem::path GetUnitRulesFile(const BuildData& buildData) const;
+
     UnitRules FetchUnitRules(sol::state& luaState, const BuildData& buildData);
 
-    UnitConfig FetchUnitConfig(sol::state& luaState, const std::string& unitType);
+
+public: // Helper
+    /**
+     * @brief Get the global Build directory.
+     * 
+     * @param unitConfig The unit config
+     * @param unitRules  The unit rules
+     * @return std::filesystem::path The directory
+     */
+    std::filesystem::path GetBuildDir(std::filesystem::path unitRoot, UnitConfig unitConfig);
+
+    /**
+     * @brief Get the build output directory
+     * 
+     * @param unitConfig 
+     * @param unitRules 
+     * @param buildConfig
+     * @return std::filesystem::path 
+     */
+    std::filesystem::path GetBuildOutputDir(UnitConfig unitConfig, const BuildData& buildConfig);
+
+    /**
+     * @brief Get the static library output directory path
+     * 
+     * @param unitRoot 
+     * @param unitConfig 
+     * @param buildConfig 
+     * @return std::filesystem::path 
+     */
+    std::filesystem::path GetStaticLibOutputDir(UnitConfig unitConfig, const BuildData& buildConfig);
 
 protected:
     IModuleManager& moduleManager;
 
     BuildConfig unitsConfigs;
-    UnitConfig unitConfig;
 
-    std::filesystem::path unitRulesFile;
-    std::filesystem::path buildTargetFile;
     std::vector<std::filesystem::path> modulesDirs;
-    std::filesystem::path buildOutput;
 
     UnitRules unitRules;
     TargetRules targetRules;
+
+    std::filesystem::path buildConfigFile;
 };
