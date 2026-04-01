@@ -8,8 +8,9 @@ class ClangCompiler : public ICompiler
 public:
     ClangCompiler() = default;
 
-    virtual void CompileExecutable(const ExecutableCompileInfo& compileInfo) const override;
-    virtual void CompileLibrary(const LibraryCompileInfo& compileInfo) const override;
+    virtual void CompileObjects(const CompileInfo& compileInfo) const override;
+    virtual void ArchiveObjects(const ArchiveInfo& archiveInfo) const override;
+    virtual void LinkBinary(const BinaryInfo& linkInfo) const override;
 
 protected:
     std::string GetCVersionClangOption(CVersion version) const;

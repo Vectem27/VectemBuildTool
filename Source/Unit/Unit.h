@@ -7,7 +7,8 @@
 enum class UnitCompilationType
 {
     Executable,
-    Library
+    StaticLibrary,
+    DynamicLibrary
 };
 
 /**

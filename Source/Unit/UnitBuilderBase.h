@@ -124,20 +124,36 @@ public: // Helper
      * 
      * @param unitConfig 
      * @param unitRules 
-     * @param buildConfig
+     * @param buildData
      * @return std::filesystem::path 
      */
-    std::filesystem::path GetBuildOutputDir(const BuildData& buildConfig);
+    std::filesystem::path GetBuildOutputDir(const BuildData& buildData);
+
+    /**
+     * @brief Get the objects output directory.
+     * 
+     * @param buildData 
+     * @return std::filesystem::path 
+     */
+    std::filesystem::path GetObjectOutputDir(const BuildData& buildData);
 
     /**
      * @brief Get the static library output directory path
      * 
      * @param unitRoot 
      * @param unitConfig 
-     * @param buildConfig 
+     * @param buildData 
      * @return std::filesystem::path 
      */
-    std::filesystem::path GetStaticLibOutputDir(const BuildData& buildConfig);
+    std::filesystem::path GetStaticLibOutputDir(const BuildData& buildData);
+
+    /**
+     * @brief Get the binary output directory.
+     * 
+     * @param buildData 
+     * @return std::filesystem::path 
+     */
+    std::filesystem::path GetBinaryOutputDir(const BuildData& buildData);
 
 protected:
     IModuleManager& moduleManager;

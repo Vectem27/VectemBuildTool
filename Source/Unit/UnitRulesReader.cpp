@@ -28,8 +28,10 @@ UnitRules UnitRulesReader::ReadUnitsRules(const std::string& unitName, const std
 
         if (compilationType == "Executable")
             res.compilationType = UnitCompilationType::Executable;
-        else if (compilationType == "Library")
-            res.compilationType = UnitCompilationType::Library;
+        else if (compilationType == "StaticLibrary")
+            res.compilationType = UnitCompilationType::StaticLibrary;
+        else if (compilationType == "DynamicLibrary")
+            res.compilationType = UnitCompilationType::DynamicLibrary;
         else
             throw UnitRulesReaderException("Unknown compilation type for unit '" + unitName + "': " + compilationType.value());
 

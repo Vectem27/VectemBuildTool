@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 
+#include "Compiler/Compilation.h"
 #include "Compiler/CompileCommandsExporter.h"
 #include "Core/Logger.hpp"
 
@@ -25,6 +26,18 @@ static std::string QuoteIfNeeded(const std::string& s)
         return "\"" + s + "\"";
     return s;
 }
+#endif
+
+#ifdef _WIN32
+    static fs::path clangPath = "clang++.exe";
+    static fs::path arPath = "llvm-ar.exe";
+    static std::string objExt = ".obj";
+    static std::string libExt = ".lib";
+#else
+    static fs::path clangPath = "clang++";
+    static fs::path arPath = "ar";
+    static std::string objExt = ".o";
+    static std::string libExt = ".a";
 #endif
 
 static void ExecuteCommand(const fs::path& exePath, const std::vector<std::string>& argStrings)
@@ -98,110 +111,22 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 #endif
 }
 
-void ClangCompiler::CompileExecutable(const ExecutableCompileInfo& compileInfo) const
+void ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
 {
-    std::vector<std::string> argStrings;
+    fs::path objDir = compileInfo.objectOutputPath;
 
-#ifdef _WIN32
-    fs::path clangPath = "clang++.exe";
-#else
-    fs::path clangPath = "clang++";
-#endif
-
-    argStrings.push_back(clangPath.string());
-    
-    // Add C version flag
-    if (compileInfo.cVersion != CVersion::C17)
-        argStrings.push_back(GetCVersionClangOption(compileInfo.cVersion));
-    
-    // Add C++ version flag
-    argStrings.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
-    
-    // Add debug info flag
-    if (compileInfo.bAddDebugInfo)
-        argStrings.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
-    
-    // Add optimization flag
-    argStrings.push_back(GetOptimisationClangOption(compileInfo.optimisation));
-    
-    // Add floating point flag
-    argStrings.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
-
-    for (const auto& include : compileInfo.includesPaths)
-        argStrings.push_back("-I" + include.string());
-
-    for (const auto& file : compileInfo.filesToCompile)
-        argStrings.push_back(file.string());
-
-#ifdef _WIN32
-    // Static libs (.lib) : full path
-    /*
-    for (const auto& libPath : compileInfo.staticLibs)
+    if (fs::exists(objDir) && fs::is_directory(objDir))
     {
-        fs::path fullLibPath = libPath;
-        if (fullLibPath.extension() != ".lib")
-        {
-            fullLibPath = libPath.parent_path() / ("lib" + libPath.filename().string() + ".lib");
-        }
-        argStrings.push_back(fullLibPath.string());
+        // TODO: Manage file changements
+        // Remove averything from the obj dir.
+        for (const auto& entry : fs::directory_iterator(objDir))
+            fs::remove_all(entry.path());
     }
-
-    fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");*/
-#else
-    for (const auto& path : compileInfo.staticLibPaths)
-            argStrings.push_back("-L" + path.string());
-
-    for (const auto& group : compileInfo.staticLibsToLink)
-    {
-        if (group.size() == 1) // Single if no circular dependencies
-        {
-            argStrings.push_back("-l" + group[0].stem().string());
-            continue;
-        }
-
-        argStrings.push_back("-Wl,--start-group"); 
-
-        for(const auto& libPath : group)
-            argStrings.push_back("-l" + libPath.stem().string());
-
-        argStrings.push_back("-Wl,--end-group");
-    }
-
-    //for (const auto& libPath : compileInfo.staticLibs)
-    //    argStrings.push_back("-l" + libPath.stem().string());
-
-    fs::path outputFile = compileInfo.buildOutputPath / "bin" / compileInfo.outputName;
-#endif
-
-    fs::create_directories(outputFile.parent_path());
-
-    argStrings.push_back("-o");
-    argStrings.push_back(outputFile.string());
-
-    ExecuteCommand(clangPath, argStrings);
-}
-
-void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
-{
-#ifdef _WIN32
-    fs::path clangPath = "clang++.exe";
-    fs::path arPath = "llvm-ar.exe";
-    std::string objExt = ".obj";
-    std::string libExt = ".lib";
-#else
-    fs::path clangPath = "clang++";
-    fs::path arPath = "ar";
-    std::string objExt = ".o";
-    std::string libExt = ".a";
-#endif
-
-    fs::path objDir = compileInfo.buildOutputPath / "obj";
-    fs::path libDir = compileInfo.buildOutputPath / "lib";
-
-    fs::create_directories(objDir);
-    fs::create_directories(libDir);
+    else
+        fs::create_directories(objDir);
 
     std::vector<fs::path> objects;
+    
 
     for (const auto& file : compileInfo.filesToCompile)
     {
@@ -220,8 +145,40 @@ void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
             args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
         
         // Add optimization flag
-        args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
+        //args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
         
+        switch (compileInfo.optimisation)
+    {
+        case CompilationOptimisation::MIN_SIZE:
+            args.push_back("-Os");
+            args.push_back("-ffunction-sections");
+            args.push_back("-fdata-sections");
+            break;
+
+        case CompilationOptimisation::AGGRESSIVE:
+            args.push_back("-O3");
+            args.push_back("-flto");
+            args.push_back("-funroll-loops");
+            args.push_back("-fomit-frame-pointer"); 
+            break;
+
+        case CompilationOptimisation::STANDARD:
+            args.push_back("-O2");
+            break;
+
+        case CompilationOptimisation::FAST:
+            args.push_back("-O3");
+            args.push_back("-march=native");
+            args.push_back("-flto");
+            args.push_back("-funroll-loops");
+            args.push_back("-fomit-frame-pointer"); 
+            break;
+
+        case CompilationOptimisation::NONE:
+            args.push_back("-O0");
+            break;
+    }
+
         // Add floating point flag
         args.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
 
@@ -241,22 +198,124 @@ void ClangCompiler::CompileLibrary(const LibraryCompileInfo& compileInfo) const
         CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
         ExecuteCommand(clangPath, args);
     }
+}
+
+void ClangCompiler::ArchiveObjects(const ArchiveInfo& archiveInfo) const
+{
+    fs::path libDir = archiveInfo.libOututPath;
+
+    fs::create_directories(libDir);
 
     std::vector<std::string> arArgs;
     arArgs.push_back(arPath.string());
 
 #ifdef _WIN32
     arArgs.push_back("rcs");
-    arArgs.push_back((libDir / ("lib" + compileInfo.outputName + libExt)).string());
+    arArgs.push_back((libDir / ("lib" + archiveInfo.outputName + libExt)).string());
 #else
     arArgs.push_back("rcs");
-    arArgs.push_back((libDir / ("lib" + compileInfo.outputName + libExt)).string());
+    arArgs.push_back((libDir / ("lib" + archiveInfo.outputName + libExt)).string());
 #endif
 
-    for (const auto& obj : objects)
+    for (const auto& obj : archiveInfo.objects)
         arArgs.push_back(obj.string());
 
     ExecuteCommand(arPath, arArgs);
+}
+
+void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const 
+{
+    std::vector<std::string> argStrings;
+
+    argStrings.push_back(clangPath.string());
+    
+    // Add debug info flag
+
+    if (linkInfo.binaryType == BinaryType::DynamicLibrary)
+    {
+        argStrings.push_back("-shared");
+        argStrings.push_back("-PCI");
+    }   
+
+    // TODO: Add dynamic export (-rdynamic)
+
+    if(linkInfo.bAddDebugInfo)
+        argStrings.push_back("-g");
+
+    switch (linkInfo.optimisation)
+    {
+    case CompilationOptimisation::MIN_SIZE:
+        argStrings.push_back("-s");
+        argStrings.push_back("-O2");
+        argStrings.push_back("-Wl,--gc-sections");
+        break;
+
+    case CompilationOptimisation::AGGRESSIVE:
+        argStrings.push_back("-O3");
+        argStrings.push_back("-flto");
+        argStrings.push_back("-Wl,-O1");
+        break;
+
+    case CompilationOptimisation::STANDARD:
+        argStrings.push_back("-O2");
+        break;
+
+    case CompilationOptimisation::FAST:
+        argStrings.push_back("-O3");
+        argStrings.push_back("-flto");
+        argStrings.push_back("-march=native");
+        argStrings.push_back("-fuse-ld=lld");
+        argStrings.push_back("-Wl,--gc-sections");
+        break;
+
+    case CompilationOptimisation::NONE:
+        break;
+    }
+
+#ifdef _WIN32
+    // Static libs (.lib) : full path
+    /*
+    for (const auto& libPath : compileInfo.staticLibs)
+    {
+        fs::path fullLibPath = libPath;
+        if (fullLibPath.extension() != ".lib")
+        {
+            fullLibPath = libPath.parent_path() / ("lib" + libPath.filename().string() + ".lib");
+        }
+        argStrings.push_back(fullLibPath.string());
+    }
+
+    fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");*/
+#else
+    for (const auto& path : linkInfo.staticLibPaths)
+            argStrings.push_back("-L" + path.string());
+
+    for (const auto& group : linkInfo.staticLibsToLink)
+    {
+        if (group.size() == 1) // Single if no circular dependencies
+        {
+            argStrings.push_back("-l" + group[0].stem().string());
+            continue;
+        }
+
+        argStrings.push_back("-Wl,--start-group"); 
+
+        for(const auto& libPath : group)
+            argStrings.push_back("-l" + libPath.stem().string());
+
+        argStrings.push_back("-Wl,--end-group");
+    }
+
+#endif
+
+    fs::path outputFile = linkInfo.binaryOutputPath / linkInfo.outputName;
+
+    fs::create_directories(outputFile.parent_path());
+
+    argStrings.push_back("-o");
+    argStrings.push_back(outputFile.string());
+
+    ExecuteCommand(clangPath, argStrings);
 }
 
 std::string ClangCompiler::GetCVersionClangOption(CVersion version) const

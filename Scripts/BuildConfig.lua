@@ -149,16 +149,9 @@ FloatingPointTypes = Enum({
 -- Unit compilation types
 UnitCompilationTypes = Enum({
     "Executable",
-    "Library",
+    "StaticLibrary",
+    "DynamicLibrary",
 })
-
--- Linking types
-LinkingTypes = Enum({
-    "Static",
-    "Dynamic",
-    "DynamicLoading"
-})
-
 
 
 
@@ -293,12 +286,12 @@ local ProgramDefaultRules = RuleSet({
 })
 
 local EngineDefaultRules = RuleSet({
-    CompilationType = UnitCompilationTypes.Library,
+    CompilationType = UnitCompilationTypes.DynamicLibrary,
     Modules = {}
 })
 
 local PluginDefaultRules = RuleSet({
-    CompilationType = UnitCompilationTypes.Library,
+    CompilationType = UnitCompilationTypes.DynamicLibrary,
     Modules = {}
 })
 

@@ -322,7 +322,8 @@ Required fields:
 #### Compilation types
 
 - Executable : Create an executable for the unit.
-- Library : Don't create an executable. Only libraries build.
+- StaticLibrary : Compile the unit as a static library
+- DynamicLibrary : Compile the unit as a dynamic library
 
 #### Additional data
 
@@ -378,7 +379,7 @@ ModuleRules = {
     PublicDependencies = { "Utils" },
     PrivateDependencies = { "InternalHelpers" },
 
-    LinkingType = "Static"
+    CodeDir = "Source"
 }
 ```
 

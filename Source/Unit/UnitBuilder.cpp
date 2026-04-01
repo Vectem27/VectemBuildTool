@@ -11,6 +11,7 @@
 #include "Module/IModuleDependencySorter.h"
 #include "Module/IModuleManager.h"
 #include "Module/Module.h"
+#include "Unit/Unit.h"
 #include "Unit/UnitBuilderBase.h"
 
 namespace fs = std::filesystem;
@@ -42,12 +43,65 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     }
 
     auto buildOutput = GetBuildOutputDir(buildData);
+    auto libOutput = GetStaticLibOutputDir(buildData);
+    auto objectOutput = GetObjectOutputDir(buildData);
 
     fs::create_directories(buildOutput);
 
     // Start compilation
 
     ICompiler* compiler = compilerFactory.Create();
+    
+
+    if (unitRules.compilationType == UnitCompilationType::StaticLibrary)
+    {
+        std::vector<fs::path> objectsFiles;
+
+        for (const auto& moduleRules : unitRules.modules)
+        {
+            ModuleInfo moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name);
+
+            IncludesToAdd includes = moduleIncSolver.Resolve(moduleInfo.name, moduleManager);
+
+            std::vector<fs::path> cppFiles;
+            for (auto& p : fs::recursive_directory_iterator(moduleInfo.directory / moduleInfo.codeDir))
+            {
+                if (!p.is_regular_file())
+                    continue;
+
+                if (p.path().extension() == ".cpp" || p.path().extension() == ".cxx")
+                    cppFiles.emplace_back(std::move(p.path()));
+            }
+
+            // Compile
+            Logger::Log(LogLevel::Info, "Start module compilation: %s", moduleRules.name.c_str());
+
+            CompileInfo compInfo = {
+                .buildOutputPath = buildOutput,
+                .objectOutputPath = objectOutput,
+                .filesToCompile = cppFiles,
+                .includesPaths = includes,
+                .bAddDebugInfo = targetRules.bAddDebugInfo,
+                .cVersion = targetRules.cVersion,
+                .cppVersion = targetRules.cppVersion,
+                .optimisation = targetRules.optimisationType,
+                .floatingPointModel = targetRules.floatingPointType,
+            };
+            compiler->CompileObjects(compInfo);
+
+            for (const auto& p : cppFiles)
+                objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
+        }
+
+        ArchiveInfo arInfo{
+            .outputName = buildData.unitName,
+            .libOututPath = GetStaticLibOutputDir(buildData),
+            .objects = objectsFiles
+        };
+        compiler->ArchiveObjects(arInfo);
+
+        return;
+    }
 
     for (const auto& moduleRules : unitRules.modules)
     {
@@ -68,64 +122,60 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         // Compile
         Logger::Log(LogLevel::Info, "Start module compilation: %s", moduleRules.name.c_str());
 
-        CompileInfo ci = {.outputName = moduleRules.name,
-                          .buildOutputPath = buildOutput,
-                          .filesToCompile = cppFiles,
-                          .includesPaths = includes,
-                          .bAddDebugInfo = targetRules.bAddDebugInfo,
-                          .cVersion = targetRules.cVersion,
-                          .cppVersion = targetRules.cppVersion,
-                          .supportedPlatforms = targetRules.supportedPlatforms,
-                          .optimisation = targetRules.optimisationType,
-                          .floatingPointModel = targetRules.floatingPointType,
-                          };
-        LibraryCompileInfo lci{ci};
-        lci.linkType = LinkType::STATIC;
-        compiler->CompileLibrary(lci);
+        CompileInfo compInfo = {
+            .buildOutputPath = buildOutput,
+            .objectOutputPath = objectOutput,
+            .filesToCompile = cppFiles,
+            .includesPaths = includes,
+            .bAddDebugInfo = targetRules.bAddDebugInfo,
+            .cVersion = targetRules.cVersion,
+            .cppVersion = targetRules.cppVersion,
+            .optimisation = targetRules.optimisationType,
+            .floatingPointModel = targetRules.floatingPointType,
+        };
+        compiler->CompileObjects(compInfo);
+
+        std::vector<fs::path> objectsFiles;
+        for (const auto& p : cppFiles)
+            objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
+
+        ArchiveInfo arInfo{
+            .outputName = moduleRules.name,
+            .libOututPath = GetStaticLibOutputDir(buildData),
+            .objects = objectsFiles
+        };
+        compiler->ArchiveObjects(arInfo);
     }
 
-    if (unitRules.compilationType == UnitCompilationType::Executable)
+    std::vector<std::string> moduleList = moduleManager.GetModuleNames();
+
+    SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
+
+    BinaryInfo binInfo = {
+        .binaryType = BinaryType::Executable,
+        .binaryOutputPath = GetBinaryOutputDir(buildData),
+        .outputName = buildData.unitName,
+        .bAddDebugInfo = targetRules.bAddDebugInfo,
+        .optimisation = targetRules.optimisationType
+    };
+
+    if (unitRules.compilationType == UnitCompilationType::DynamicLibrary)
+        binInfo.binaryType = BinaryType::Executable;
+
+    for (const auto& group : sortedModules)
     {
-        std::vector<std::string> moduleList = moduleManager.GetModuleNames();
-
-        SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
-
-        CompileInfo ci = {.outputName = buildData.unitName,
-                        .buildOutputPath = buildOutput,
-                        .filesToCompile = {},
-                        .includesPaths = {},
-                        .bAddDebugInfo = targetRules.bAddDebugInfo,
-                        .cVersion = targetRules.cVersion,
-                        .cppVersion = targetRules.cppVersion,
-                        .supportedPlatforms = targetRules.supportedPlatforms,
-                        .optimisation = targetRules.optimisationType,
-                        .floatingPointModel = targetRules.floatingPointType};
-
-        for (const auto& group : sortedModules)
-        {
-            std::vector<std::filesystem::path> groupPaths;
-            for (const auto& module : group)
-                groupPaths.emplace_back(buildOutput / "lib" / module);
-            ci.staticLibsToLink.emplace_back(groupPaths);
-        }
-
-        ci.staticLibPaths.emplace_back(buildOutput / "lib");
-
-        for (const auto& depData : dependanciesData)
-        ci.staticLibPaths.emplace_back(depData.libDir);
-            
-
-
-        // TODO: Add dependancies static libs to link 
-
-        ExecutableCompileInfo eci(ci);
-        //eci.staticLibs = {};
-        //for (const auto& moduleRules : unitRules.modules)
-        //    eci.staticLibs.emplace_back(buildOutput / "lib" / moduleRules.name);
-
-
-        compiler->CompileExecutable(eci);
+        std::vector<std::filesystem::path> groupPaths;
+        for (const auto& module : group)
+            groupPaths.emplace_back(libOutput / module);
+        binInfo.staticLibsToLink.emplace_back(groupPaths);
     }
+
+    binInfo.staticLibPaths.emplace_back(libOutput);
+
+    for (const auto& depData : dependanciesData)
+    binInfo.staticLibPaths.emplace_back(depData.libDir);
+        
+    compiler->LinkBinary(binInfo);
     
     delete compiler;
 }
