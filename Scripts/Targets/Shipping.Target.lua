@@ -1,7 +1,7 @@
 -- Shipping Target Configuration
 -- Maximum optimization for production builds
 
-ShippingTagetRules = TargetRules({
+Shipping_Rules = TargetRules({
     bAddDebugInfo = false,
     CVersion = CVersions.C17,
     CppVersion = CppVersions.CPP20,

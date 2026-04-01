@@ -1,7 +1,7 @@
 -- Test Target Configuration
 -- All fields are optional and will use default values from BuildConfig if not specified
 
-TestTagetRules = TargetRules({
+Test_Rules = TargetRules({
     bAddDebugInfo = true,
     CVersion = CVersions.C17,
     CppVersion = CppVersions.CPP20,

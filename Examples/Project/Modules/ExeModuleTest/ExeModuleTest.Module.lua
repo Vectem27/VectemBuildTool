@@ -1,3 +1,3 @@
-ExeModuleTestModuleRules = Module({
+ExeModuleTest_Rules = Module({
     PrivateDependencies = {"ModuleTest", "EngineModuleTest"},
 })

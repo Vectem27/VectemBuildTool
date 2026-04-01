@@ -1,2 +1,2 @@
-EngineModuleTestModuleRules = Module({
+EngineModuleTest_Rules = Module({
 })

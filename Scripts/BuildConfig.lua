@@ -162,18 +162,18 @@ UnitCompilationTypes = Enum({
 -- Units config
 
 BuildConfig = BuildConfigSet({
-    Program = Set({
-        UnitFileName = "${UnitName}.Unit.lua",
-        UnitClassName = "${UnitName}UnitRules",
+    Project = Set({
+        UnitFileName = "${UnitName}.Project.lua",
+        UnitClassName = "${UnitName}_Rules",
 
         ModulesDir      = { "Modules" },
-        ModuleRootName  = "${ModuleName}Module",
+        ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName}.Module.lua",
-        ModuleClassName = "${ModuleName}ModuleRules",
+        ModuleClassName = "${ModuleName}_Rules",
 
         TargetsDir = "Targets",
         TargetFileName  = "${TargetName}.Target.lua",
-        TargetClassName = "${TargetName}TagetRules",
+        TargetClassName = "${TargetName}_Rules",
 
         BuildDir = "Build",
 
@@ -188,17 +188,17 @@ BuildConfig = BuildConfigSet({
     }),
 
     Engine = Set({
-        UnitFileName = "${UnitName}.Unit.lua",
-        UnitClassName = "${UnitName}UnitRules",
+        UnitFileName = "${UnitName}.Engine.lua",
+        UnitClassName = "${UnitName}_Rules",
         
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName}.Module.lua",
-        ModuleClassName = "${ModuleName}ModuleRules",
+        ModuleClassName = "${ModuleName}_Rules",
 
         TargetsDir = "Targets",
         TargetFileName  = "${TargetName}.Target.lua",
-        TargetClassName = "${TargetName}TagetRules",
+        TargetClassName = "${TargetName}_Rules",
 
         BuildDir = "Build",
 
@@ -214,12 +214,12 @@ BuildConfig = BuildConfigSet({
 
     Plugin = Set({
         UnitFileName = "${UnitName}.Plugin.lua",
-        UnitClassName = "${UnitName}UnitRules",
+        UnitClassName = "${UnitName}_Rules",
 
         ModulesDir      = { "Modules" },
         ModuleRootName  = "${ModuleName}",
         ModuleFileName  = "${ModuleName}.Module.lua",
-        ModuleClassName = "${ModuleName}ModuleRules",
+        ModuleClassName = "${ModuleName}_Rules",
         BuildDir = "Build",
         SubUnits = {}
     })
@@ -280,7 +280,7 @@ end
 
 -- Units rules base
 
-local ProgramDefaultRules = RuleSet({
+local ProjectDefaultRules = RuleSet({
     CompilationType = UnitCompilationTypes.Executable,
     Modules = {}
 })
@@ -307,7 +307,7 @@ local function MakeUnit(defaults, rules)
 end
 
 EngineRules  = function(d) return MakeUnit(d, EngineDefaultRules) end
-ProgramRules = function(d) return MakeUnit(d, ProgramDefaultRules) end
+ProjectRules = function(d) return MakeUnit(d, ProjectDefaultRules) end
 PluginRules  = function(d) return MakeUnit(d, PluginDefaultRules) end
 
 

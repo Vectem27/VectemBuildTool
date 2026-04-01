@@ -1,4 +1,4 @@
-ProjectUnitRules = ProgramRules({
+Project_Rules = ProjectRules({
     Modules = {
         ModuleTest = {
             Platforms = Platforms.All

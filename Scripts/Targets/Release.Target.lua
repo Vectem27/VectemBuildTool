@@ -1,7 +1,7 @@
 -- Release Target Configuration
 -- Optimized for performance without debug information
 
-ReleaseTagetRules = TargetRules({
+Release_Rules = TargetRules({
     bAddDebugInfo = false,
     CVersion = CVersions.C17,
     CppVersion = CppVersions.CPP20,

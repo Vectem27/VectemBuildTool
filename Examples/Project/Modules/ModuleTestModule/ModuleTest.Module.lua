@@ -1,2 +1,0 @@
-ModuleTestModuleRules = Module({
-})

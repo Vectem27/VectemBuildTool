@@ -1,7 +1,7 @@
 -- Debug Target Configuration
 -- Includes debug information for development
 
-DebugTagetRules = TargetRules({
+Debug_Rules = TargetRules({
     bAddDebugInfo = true,
     CVersion = CVersions.C17,
     CppVersion = CppVersions.CPP20,
