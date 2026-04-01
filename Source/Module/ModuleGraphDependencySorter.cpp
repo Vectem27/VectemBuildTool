@@ -184,30 +184,41 @@ SortedModulesGroups ModuleGraphDependencySorter::Sort(std::vector<std::string> m
 }
 
 // Recursive function
-void ModuleGraphDependencySorter::AddModuleAndDependencies(const std::string& moduleName, std::list<std::string>& modules,
+bool ModuleGraphDependencySorter::AddModuleAndDependencies(const std::string& moduleName, std::list<std::string>& modules,
                                                            std::list<ModuleDependency>& dependancies,
                                                            const std::vector<std::string>& unitModules,
                                                            const IModuleManager& moduleManager) const
 {
     if (!IsUnitModule(moduleName, unitModules)) // Add only unit modules
-        return;
+        return false;
 
     if (!AddModule(moduleName, modules)) // Add only one time
-        return;
+        return false;
 
-    ModuleInfo moduleInfo = moduleManager.ResolveModuleInfo(moduleName);
+    ModuleInfo moduleInfo;
+        
+    try
+    {
+        moduleInfo = moduleManager.ResolveModuleInfo(moduleName);
+    }
+    catch (...) 
+    {
+        return false;
+    }
 
     for (const auto& depModuleName : moduleInfo.publicModuleDependencies)
     {
-        AddDependency(moduleName, depModuleName, dependancies);
-        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager);
+        if(AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager))
+            AddDependency(moduleName, depModuleName, dependancies);
     }
 
     for (const auto& depModuleName : moduleInfo.privateModuleDependencies)
     {
-        AddDependency(moduleName, depModuleName, dependancies);
-        AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager);
+        if(AddModuleAndDependencies(depModuleName, modules, dependancies, unitModules, moduleManager))
+            AddDependency(moduleName, depModuleName, dependancies);
     }
+
+    return true;
 }
 
 bool ModuleGraphDependencySorter::AddModule(const std::string& moduleName, std::list<std::string>& modules) const

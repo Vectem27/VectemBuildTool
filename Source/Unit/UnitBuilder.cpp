@@ -103,10 +103,12 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         return;
     }
 
+    std::vector<std::string> moduleList;
+
     for (const auto& moduleRules : unitRules.modules)
     {
+        moduleList.push_back(moduleRules.name);
         ModuleInfo moduleInfo = moduleManager.ResolveModuleInfo(moduleRules.name);
-
         IncludesToAdd includes = moduleIncSolver.Resolve(moduleInfo.name, moduleManager);
 
         std::vector<fs::path> cppFiles;
@@ -147,10 +149,6 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         compiler->ArchiveObjects(arInfo);
     }
 
-    std::vector<std::string> moduleList = moduleManager.GetModuleNames();
-
-    SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
-
     BinaryInfo binInfo = {
         .binaryType = BinaryType::Executable,
         .binaryOutputPath = GetBinaryOutputDir(buildData),
@@ -159,8 +157,54 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         .optimisation = targetRules.optimisationType
     };
 
+
+    for (const auto& dep : dependanciesData)
+    {
+        if (dep.compilationType == UnitCompilationType::StaticLibrary)
+        {
+            moduleList.insert(moduleList.end(), dep.moduleNames.begin(), dep.moduleNames.end());
+            binInfo.libPaths.emplace_back(dep.libDir);
+        }
+        else if (dep.compilationType == UnitCompilationType::DynamicLibrary)
+        {
+            binInfo.libPaths.emplace_back(dep.binDir);
+            binInfo.dynamicLibsToLink.emplace_back(dep.unitName);
+
+            try 
+            {
+                fs::path source = (dep.binDir / ("lib" + dep.unitName)).replace_extension(".so");
+                fs::path destination = (GetBinaryOutputDir(buildData) / ("lib" + dep.unitName)).replace_extension(".so");
+#ifdef _WIN32
+                source.replace_filename(dep.unitName + ".dll");
+                destination.replace_extension(dep.unitName + ".dll");
+#endif
+                fs::copy_file(source, destination, fs::copy_options::overwrite_existing);
+                Logger::Log(LogLevel::Info, 
+                    "'%s' dynamic library was successfully copied to the build destination.", 
+                    dep.unitName.c_str());
+            } 
+            catch (const fs::filesystem_error& e) 
+            {
+                Logger::Log(LogLevel::Error, 
+                    "Failed to copy the unit dynamic library '%s' to the build destination.", 
+                    dep.unitName.c_str());
+                throw UnitBuilderException(e.what());
+            }
+        }
+        else
+        {
+            std::string errorMsg = "Can not link project dependancy : '" + dep.unitName + "', the unit is an executable.";
+            Logger::Log(LogLevel::Error, errorMsg.c_str());
+            throw UnitBuilderException(errorMsg);
+        }
+    }
+    
+
+    SortedModulesGroups sortedModules = moduleDepSorter.Sort(moduleList, moduleManager);
+
+
     if (unitRules.compilationType == UnitCompilationType::DynamicLibrary)
-        binInfo.binaryType = BinaryType::Executable;
+        binInfo.binaryType = BinaryType::DynamicLibrary;
 
     for (const auto& group : sortedModules)
     {
@@ -170,11 +214,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         binInfo.staticLibsToLink.emplace_back(groupPaths);
     }
 
-    binInfo.staticLibPaths.emplace_back(libOutput);
+    binInfo.libPaths.emplace_back(libOutput);
 
-    for (const auto& depData : dependanciesData)
-    binInfo.staticLibPaths.emplace_back(depData.libDir);
-        
     compiler->LinkBinary(binInfo);
     
     delete compiler;
@@ -197,10 +238,11 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
         .platform = buildData.platform
     };
 
+    res.unitName = dependancyBuildData.unitName;
+    res.binDir = GetBinaryOutputDir(dependancyBuildData);
+    res.libDir = GetStaticLibOutputDir(dependancyBuildData);
 
     UnitConfig unitConfig = GetUnitConfig(dependancyBuildData.unitType);
-
-    res.libDir = GetStaticLibOutputDir(dependancyBuildData);
 
     std::filesystem::path unitRulesFile = GetUnitRulesFile(dependancyBuildData);
 
@@ -208,6 +250,11 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
 
     auto unitRules = FetchUnitRules(luaState, dependancyBuildData);
 
+    res.compilationType = unitRules.compilationType;
+    for (const auto& moduleInfo : unitRules.modules)
+        res.moduleNames.push_back(moduleInfo.name);
+
     ReadModulesrules(dependancyBuildData, unitConfig, unitRulesFile, unitRules.modules);
+
     return res;
 }

@@ -12,7 +12,7 @@ public:
     virtual SortedModulesGroups Sort(std::vector<std::string> modulesName, const IModuleManager& moduleManager) const override;
 
 protected:
-    void AddModuleAndDependencies(const std::string& moduleName, std::list<std::string>& modules,
+    bool AddModuleAndDependencies(const std::string& moduleName, std::list<std::string>& modules,
                                   std::list<ModuleDependency>& dependancies, const std::vector<std::string>& unitModules,
                                   const IModuleManager& moduleManager) const;
     bool AddModule(const std::string& moduleName, std::list<std::string>& modules) const;

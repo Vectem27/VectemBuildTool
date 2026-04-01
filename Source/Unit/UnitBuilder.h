@@ -5,6 +5,7 @@
 #include "Module/IModuleDependencySorter.h"
 #include "Module/IModuleIncludeSolver.h"
 
+#include "Unit/Unit.h"
 #include "UnitBuilderBase.h"
 
 class ITargetRulesReader;
@@ -15,7 +16,11 @@ class UnitBuilder : public UnitBuilderBase
 protected:
     struct DependancyProcessingResult
     {
+        std::string unitName;
+        UnitCompilationType compilationType;
         std::filesystem::path libDir;
+        std::filesystem::path binDir;
+        std::vector<std::string> moduleNames;
     };
     
 public:

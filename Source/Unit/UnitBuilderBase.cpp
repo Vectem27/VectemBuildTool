@@ -121,7 +121,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, const UnitCon
         std::unique_ptr<IModuleInfoReader> moduleReader = std::make_unique<ModuleInfoReader>(moduleLua);
 
         moduleManager.AddModule(moduleRules.name, moduleStructure,
-                                 ResolveMacro(unitConfig.moduleClassName, "ModuleName", moduleRules.name), *moduleReader);
+                                ResolveMacro(unitConfig.moduleClassName, "ModuleName", moduleRules.name), *moduleReader);
     }
 }
 

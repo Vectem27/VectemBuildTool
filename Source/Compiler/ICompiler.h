@@ -42,7 +42,7 @@ struct BinaryInfo
 
     std::list<std::vector<std::filesystem::path>> staticLibsToLink;
     std::vector<std::filesystem::path> dynamicLibsToLink;
-    std::vector<std::filesystem::path> staticLibPaths;
+    std::vector<std::filesystem::path> libPaths;
 
     std::filesystem::path binaryOutputPath;
     std::string outputName;

@@ -234,7 +234,7 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
     if (linkInfo.binaryType == BinaryType::DynamicLibrary)
     {
         argStrings.push_back("-shared");
-        argStrings.push_back("-PCI");
+        argStrings.push_back("-fPIC");
     }   
 
     // TODO: Add dynamic export (-rdynamic)
@@ -287,8 +287,10 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
 
     fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");*/
 #else
-    for (const auto& path : linkInfo.staticLibPaths)
+    for (const auto& path : linkInfo.libPaths)
             argStrings.push_back("-L" + path.string());
+
+    argStrings.push_back("-Wl,-Bstatic");
 
     for (const auto& group : linkInfo.staticLibsToLink)
     {
@@ -306,9 +308,21 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
         argStrings.push_back("-Wl,--end-group");
     }
 
+    argStrings.push_back("-Wl,-Bdynamic");
+
+    for (const auto& lib : linkInfo.dynamicLibsToLink)
+        argStrings.push_back("-l" + lib.stem().string());
 #endif
 
-    fs::path outputFile = linkInfo.binaryOutputPath / linkInfo.outputName;
+    fs::path outputFile;
+
+    if (linkInfo.binaryType == BinaryType::DynamicLibrary)
+    {
+        outputFile = linkInfo.binaryOutputPath / ("lib" + linkInfo.outputName);
+        outputFile.replace_extension(".so");
+    }
+    else
+        outputFile = linkInfo.binaryOutputPath / linkInfo.outputName;
 
     fs::create_directories(outputFile.parent_path());
 
