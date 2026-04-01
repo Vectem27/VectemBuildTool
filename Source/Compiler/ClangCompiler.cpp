@@ -288,9 +288,14 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
     fs::path outputFile = compileInfo.buildOutputPath / "bin" / (compileInfo.outputName + ".exe");*/
 #else
     for (const auto& path : linkInfo.libPaths)
-            argStrings.push_back("-L" + path.string());
+        argStrings.push_back("-L" + path.string());
 
-    argStrings.push_back("-Wl,-Bstatic");
+    const bool linkingShared = (linkInfo.binaryType == BinaryType::DynamicLibrary);
+
+    argStrings.push_back("-Wl,-rpath,'$ORIGIN'");
+
+    if (linkingShared)
+        argStrings.push_back("-Wl,--whole-archive");
 
     for (const auto& group : linkInfo.staticLibsToLink)
     {
@@ -308,7 +313,8 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
         argStrings.push_back("-Wl,--end-group");
     }
 
-    argStrings.push_back("-Wl,-Bdynamic");
+    if (linkingShared)
+        argStrings.push_back("-Wl,--no-whole-archive");
 
     for (const auto& lib : linkInfo.dynamicLibsToLink)
         argStrings.push_back("-l" + lib.stem().string());

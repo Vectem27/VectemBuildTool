@@ -45,6 +45,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     auto buildOutput = GetBuildOutputDir(buildData);
     auto libOutput = GetStaticLibOutputDir(buildData);
     auto objectOutput = GetObjectOutputDir(buildData);
+    auto binOutput = GetBinaryOutputDir(buildData);
 
     fs::create_directories(buildOutput);
 
@@ -172,12 +173,16 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
             try 
             {
+                if (!fs::exists(binOutput))
+                    fs::create_directories(binOutput);
+
                 fs::path source = (dep.binDir / ("lib" + dep.unitName)).replace_extension(".so");
-                fs::path destination = (GetBinaryOutputDir(buildData) / ("lib" + dep.unitName)).replace_extension(".so");
+                fs::path destination = (binOutput / ("lib" + dep.unitName)).replace_extension(".so");
 #ifdef _WIN32
                 source.replace_filename(dep.unitName + ".dll");
                 destination.replace_extension(dep.unitName + ".dll");
 #endif
+
                 fs::copy_file(source, destination, fs::copy_options::overwrite_existing);
                 Logger::Log(LogLevel::Info, 
                     "'%s' dynamic library was successfully copied to the build destination.", 

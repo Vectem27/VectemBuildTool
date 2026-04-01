@@ -179,7 +179,7 @@ SortedModulesGroups ModuleGraphDependencySorter::Sort(std::vector<std::string> m
     ReductedModuleDepGraph reducedGraph = BuildReductedGraph(moduleDepGraph);
 
     SortedModulesGroups res = TopologicalSort(reducedGraph);
-
+    res.reverse();
     return res;
 }
 
