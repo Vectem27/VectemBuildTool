@@ -1,6 +1,6 @@
 #pragma once
 
-#include <unordered_map>
+#include <map>
 
 #include "IModuleManager.h"
 #include "Module/Module.h"
@@ -23,7 +23,7 @@ public:
     }
 
 private:
-    std::unordered_map<std::string, ModuleStructureInfo> modulesStructure;
+    std::map<std::string, ModuleStructureInfo> modulesStructure;
 
-    mutable std::unordered_map<std::string, ModuleInfo> cachedModuleInfos;
+    mutable std::map<std::string, ModuleInfo> cachedModuleInfos;
 };
