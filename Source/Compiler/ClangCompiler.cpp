@@ -292,7 +292,10 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
 
     const bool linkingShared = (linkInfo.binaryType == BinaryType::DynamicLibrary);
 
-    argStrings.push_back("-Wl,-rpath,'$ORIGIN'");
+    // Use $ORIGIN without shell quotes so the linker encodes a relative rpath
+    argStrings.push_back("-Wl,-rpath,$ORIGIN");
+
+    // TODO: Add custom dll directory
 
     if (linkingShared)
         argStrings.push_back("-Wl,--whole-archive");
