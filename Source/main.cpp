@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
     app.add_option("unit-name", unitName, "Unit name")
        ->required();
 
-    app.add_option("unit-type", unitType, "Unit name")
+    app.add_option("unit-type", unitType, "Unit type")
        ->required();
 
     app.add_option("build-target", buildTarget, "Target file path")
@@ -116,9 +116,9 @@ int main(int argc, char* argv[])
 
     app.add_option("-l, --log-level", logLevel, "Minimum log level (critical, error, warning, info, debug, trace)");
 
-    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-name unit-type)")
-       ->each([](const std::string& input) -> std::string {
-            static int state = 0; // 0=path,1=unitName,2=unitType
+    app.add_option("--dependancy", dependancyProjectsOptRes, "Projects dependancies (format : project-path unit-name unit-type build-target)")
+        ->each([](const std::string& input) -> std::string {
+            static int state = 0; // 0=path,1=unitName,2=unitType,3=buildTarget
 
             if (state == 0)
             {
@@ -150,9 +150,19 @@ int main(int argc, char* argv[])
                     );
                 }
             }
+            else if (state == 3)
+            {
+                if (input.empty())
+                {
+                    throw CLI::ValidationError(
+                        "--dependancy",
+                        "Build target cannot be empty"
+                    );
+                }
+            }
 
-            state = (state + 1) % 3;
-           return input;
+            state = (state + 1) % 4;
+            return input;
        });
 
 
@@ -164,11 +174,11 @@ int main(int argc, char* argv[])
     {
         (app).parse(argc, argv);
 
-        if (dependancyProjectsOptRes.size() % 3 != 0)
+        if (dependancyProjectsOptRes.size() % 4 != 0)
         {
             throw CLI::ValidationError(
                 "--dependancy",
-                "Each project dependancy must have project-path, unit-name and unit-type"
+                "Each project dependancy must have project-path, unit-name, unit-type and build-target"
             );
         }
     }
@@ -192,18 +202,19 @@ int main(int argc, char* argv[])
  
     std::vector<ProjectDependancy> dependancyProjects;
  
-    if (dependancyProjectsOptRes.size() % 3 != 0)
+    if (dependancyProjectsOptRes.size() % 4 != 0)
     {
-        Logger::Log(LogLevel::Error, "Each project dependancy must have project-path, unit-name and unit-type");
+        Logger::Log(LogLevel::Error, "Each project dependancy must have project-path, unit-name, unit-type and build-target");
         return EXIT_FAILURE;
     }
  
-    for (size_t i = 0; i < dependancyProjectsOptRes.size(); i += 3)
+    for (size_t i = 0; i < dependancyProjectsOptRes.size(); i += 4)
     {
         dependancyProjects.push_back({
             .projectPath = fs::absolute(dependancyProjectsOptRes[i]),
             .unitName = dependancyProjectsOptRes[i + 1],
-            .unitType = dependancyProjectsOptRes[i + 2]
+            .unitType = dependancyProjectsOptRes[i + 2],
+            .buildTarget = dependancyProjectsOptRes[i + 3]
         });
     }
 

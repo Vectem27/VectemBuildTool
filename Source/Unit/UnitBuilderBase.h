@@ -16,6 +16,7 @@ struct ProjectDependancy
     std::filesystem::path projectPath;
     std::string unitName;
     std::string unitType;
+    std::string buildTarget;
 };
 
 struct BuildData

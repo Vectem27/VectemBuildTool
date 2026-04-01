@@ -237,7 +237,7 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
         .unitRoot = dependancy.projectPath,
         .unitName = dependancy.unitName,
         .unitType = dependancy.unitType,
-        .buildTarget = buildData.buildTarget,
+        .buildTarget = dependancy.buildTarget,
         .dependancyProjects = {},
         .configurationFile = buildData.configurationFile,
         .platform = buildData.platform

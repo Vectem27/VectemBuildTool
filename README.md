@@ -24,7 +24,7 @@ All configuration files are written in Lua, allowing dynamic and programmable bu
 ### Command Pattern
 
 ```xml
-VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependancy <ProjectRootDir> <UnitName> <UnitType>...] <ProjectRootDir> <UnitName> <UnitType> <Target>
+VectemBuildTool [--config <BuildConfigFile> --platform <PlatformName> --dependancy <ProjectRootDir> <UnitName> <UnitType> <build-target>...] <ProjectRootDir> <UnitName> <UnitType> <Target>
 ```
 
 Can have multiple --dependency-projects

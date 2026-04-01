@@ -7,6 +7,7 @@
 #include "BuildConfig/BuildConfig.h"
 #include "BuildConfig/BuildConfigReader.h"
 #include "Core/Logger.hpp"
+#include "Helper.h"
 #include "Target/TargetRulesReader.h"
 
 #include "Module/ModuleInfoReader.h"
@@ -43,9 +44,17 @@ void UnitBuilderBase::BuildUnit(const BuildData& buildData)
             throw UnitBuilderException("Unable to build '" + buildData.unitName +"' : Target filename is empty.");
        
         fs::path buildTargetFile;
-         std::string buildTargetFileName = unitConfig.targetFileName;
+        std::string buildTargetFileName = unitConfig.targetFileName;
         buildTargetFileName = std::regex_replace(buildTargetFileName, std::regex(R"(\$\{TargetName\})"), buildData.buildTarget);
         buildTargetFile = buildData.unitRoot / unitConfig.targetsDir / buildTargetFileName;
+
+        if (!fs::exists(buildTargetFile) || !fs::is_regular_file(buildTargetFile))
+        {
+            buildTargetFile = GetScriptDir() / "Targets" / (buildData.buildTarget + ".Target.lua");
+
+            if (!fs::exists(buildTargetFile) || !fs::is_regular_file(buildTargetFile))
+                throw UnitBuilderException("Unable to build '" + buildData.unitName +"' : Target rules file does not exist.");
+        }
        
 
         sol::state targetLua = NewBuilderLuaState();
