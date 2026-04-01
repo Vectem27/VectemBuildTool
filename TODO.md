@@ -9,3 +9,7 @@
 
 - [ ] Add sub units compilation to allow plugins systems.
 - [ ] Allow dynamic library sub units to be dynamically loaded.
+
+## Optimisation
+
+- [ ] Adding file changes check to avoid recompilation.
