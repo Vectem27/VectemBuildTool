@@ -13,6 +13,8 @@ public:
     virtual void LinkBinary(const BinaryInfo& linkInfo) const override;
 
 protected:
+    std::vector<std::string> CreateCompileArgs(const CompileInfo& compileInfo, unsigned int fileLanguage) const;
+
     std::string GetCVersionClangOption(CVersion version) const;
     std::string GetCppVersionClangOption(CppVersion version) const;
     std::string GetOptimisationClangOption(CompilationOptimisation optimisation) const;

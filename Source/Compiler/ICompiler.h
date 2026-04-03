@@ -14,7 +14,8 @@ struct CompileInfo
     std::filesystem::path buildOutputPath;
     std::filesystem::path objectOutputPath;
 
-    std::vector<std::filesystem::path> filesToCompile;
+    std::vector<std::filesystem::path> cppFilesToCompile;
+    std::vector<std::filesystem::path> cFilesToCompile;
     std::vector<std::filesystem::path> includesPaths;
 
     bool bAddDebugInfo = false;

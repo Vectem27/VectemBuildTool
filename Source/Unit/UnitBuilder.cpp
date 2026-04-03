@@ -65,6 +65,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             IncludesToAdd includes = moduleIncSolver.Resolve(moduleInfo.name, moduleManager);
 
             std::vector<fs::path> cppFiles;
+            std::vector<fs::path> cFiles;
             for (auto& p : fs::recursive_directory_iterator(moduleInfo.directory / moduleInfo.codeDir))
             {
                 if (!p.is_regular_file())
@@ -72,6 +73,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
                 if (p.path().extension() == ".cpp" || p.path().extension() == ".cxx")
                     cppFiles.emplace_back(std::move(p.path()));
+                else if (p.path().extension() == ".c")
+                    cFiles.emplace_back(std::move(p.path()));
             }
 
             // Compile
@@ -80,7 +83,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             CompileInfo compInfo = {
                 .buildOutputPath = buildOutput,
                 .objectOutputPath = objectOutput,
-                .filesToCompile = cppFiles,
+                .cppFilesToCompile = cppFiles,
+                .cFilesToCompile = cFiles,
                 .includesPaths = includes,
                 .bAddDebugInfo = targetRules.bAddDebugInfo,
                 .cVersion = targetRules.cVersion,
@@ -113,6 +117,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         IncludesToAdd includes = moduleIncSolver.Resolve(moduleInfo.name, moduleManager);
 
         std::vector<fs::path> cppFiles;
+        std::vector<fs::path> cFiles;
         for (auto& p : fs::recursive_directory_iterator(moduleInfo.directory / moduleInfo.codeDir))
         {
             if (!p.is_regular_file())
@@ -120,6 +125,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
             if (p.path().extension() == ".cpp" || p.path().extension() == ".cxx")
                 cppFiles.emplace_back(std::move(p.path()));
+            else if (p.path().extension() == ".c")
+                cFiles.emplace_back(std::move(p.path()));
         }
 
         // Compile
@@ -128,7 +135,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         CompileInfo compInfo = {
             .buildOutputPath = buildOutput,
             .objectOutputPath = objectOutput,
-            .filesToCompile = cppFiles,
+            .cppFilesToCompile = cppFiles,
+            .cFilesToCompile = cFiles,
             .includesPaths = includes,
             .bAddDebugInfo = targetRules.bAddDebugInfo,
             .cVersion = targetRules.cVersion,

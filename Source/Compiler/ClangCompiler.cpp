@@ -29,16 +29,24 @@ static std::string QuoteIfNeeded(const std::string& s)
 #endif
 
 #ifdef _WIN32
-    static fs::path clangPath = "clang++.exe";
+    static fs::path clangPath = "clang.exe";
+    static fs::path clangCppPath = "clang++.exe";
     static fs::path arPath = "llvm-ar.exe";
     static std::string objExt = ".obj";
     static std::string libExt = ".lib";
 #else
-    static fs::path clangPath = "clang++";
+    static fs::path clangPath = "clang";
+    static fs::path clangCppPath = "clang++";
     static fs::path arPath = "ar";
     static std::string objExt = ".o";
     static std::string libExt = ".a";
 #endif
+
+enum FileLanguage : unsigned int
+{
+    LANG_C,
+    LANG_CPP
+};
 
 static void ExecuteCommand(const fs::path& exePath, const std::vector<std::string>& argStrings)
 {
@@ -127,63 +135,9 @@ void ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
 
     std::vector<fs::path> objects;
     
-
-    for (const auto& file : compileInfo.filesToCompile)
+    for (const auto& file : compileInfo.cFilesToCompile)
     {
-        std::vector<std::string> args;
-        args.push_back(clangPath.string());
-        
-        // Add C version flag
-        if (compileInfo.cVersion != CVersion::C17)
-            args.push_back(GetCVersionClangOption(compileInfo.cVersion));
-        
-        // Add C++ version flag
-        args.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
-        
-        // Add debug info flag
-        if (compileInfo.bAddDebugInfo)
-            args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
-        
-        // Add optimization flag
-        //args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
-        
-        switch (compileInfo.optimisation)
-    {
-        case CompilationOptimisation::MIN_SIZE:
-            args.push_back("-Os");
-            args.push_back("-ffunction-sections");
-            args.push_back("-fdata-sections");
-            break;
-
-        case CompilationOptimisation::AGGRESSIVE:
-            args.push_back("-O3");
-            args.push_back("-flto");
-            args.push_back("-funroll-loops");
-            args.push_back("-fomit-frame-pointer"); 
-            break;
-
-        case CompilationOptimisation::STANDARD:
-            args.push_back("-O2");
-            break;
-
-        case CompilationOptimisation::FAST:
-            args.push_back("-O3");
-            args.push_back("-march=native");
-            args.push_back("-flto");
-            args.push_back("-funroll-loops");
-            args.push_back("-fomit-frame-pointer"); 
-            break;
-
-        case CompilationOptimisation::NONE:
-            args.push_back("-O0");
-            break;
-    }
-
-        // Add floating point flag
-        args.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
-
-        for (const auto& include : compileInfo.includesPaths)
-            args.push_back("-I" + include.string());
+        auto args = CreateCompileArgs(compileInfo, LANG_C);
 
         args.push_back("-c");
         args.push_back(file.string());
@@ -197,6 +151,24 @@ void ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
         objects.push_back(objFile);
         CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
         ExecuteCommand(clangPath, args);
+    }
+
+    for (const auto& file : compileInfo.cppFilesToCompile)
+    {
+        auto args = CreateCompileArgs(compileInfo, LANG_CPP);
+
+        args.push_back("-c");
+        args.push_back(file.string());
+
+        fs::path objFile = objDir / file.filename();
+        objFile.replace_extension(objExt);
+
+        args.push_back("-o");
+        args.push_back(objFile.string());
+
+        objects.push_back(objFile);
+        CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
+        ExecuteCommand(clangCppPath, args);
     }
 }
 
@@ -227,7 +199,7 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
 {
     std::vector<std::string> argStrings;
 
-    argStrings.push_back(clangPath.string());
+    argStrings.push_back(clangCppPath.string());
     
     // Add debug info flag
 
@@ -338,7 +310,73 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
     argStrings.push_back("-o");
     argStrings.push_back(outputFile.string());
 
-    ExecuteCommand(clangPath, argStrings);
+    ExecuteCommand(clangCppPath, argStrings);
+}
+
+
+std::vector<std::string> ClangCompiler::CreateCompileArgs(const CompileInfo& compileInfo, unsigned int fileLanguage) const
+{
+    std::vector<std::string> args;
+        args.push_back(clangCppPath.string());
+        
+        switch (fileLanguage)
+        {
+        case LANG_C:
+            args.push_back(GetCVersionClangOption(compileInfo.cVersion));
+            break;
+        case LANG_CPP:
+            args.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
+            break;
+        default:
+            throw std::runtime_error("Failed to compile file, unknown file type.");
+        }
+        
+        // Add debug info flag
+        if (compileInfo.bAddDebugInfo)
+            args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
+        
+        // Add optimization flag
+        //args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
+        
+        switch (compileInfo.optimisation)
+    {
+        case CompilationOptimisation::MIN_SIZE:
+            args.push_back("-Os");
+            args.push_back("-ffunction-sections");
+            args.push_back("-fdata-sections");
+            break;
+
+        case CompilationOptimisation::AGGRESSIVE:
+            args.push_back("-O3");
+            args.push_back("-flto");
+            args.push_back("-funroll-loops");
+            args.push_back("-fomit-frame-pointer"); 
+            break;
+
+        case CompilationOptimisation::STANDARD:
+            args.push_back("-O2");
+            break;
+
+        case CompilationOptimisation::FAST:
+            args.push_back("-O3");
+            args.push_back("-march=native");
+            args.push_back("-flto");
+            args.push_back("-funroll-loops");
+            args.push_back("-fomit-frame-pointer"); 
+            break;
+
+        case CompilationOptimisation::NONE:
+            args.push_back("-O0");
+            break;
+    }
+
+        // Add floating point flag
+    args.push_back(GetFloatingPointClangOption(compileInfo.floatingPointModel));
+
+    for (const auto& include : compileInfo.includesPaths)
+    args.push_back("-I" + include.string());
+
+    return args;
 }
 
 std::string ClangCompiler::GetCVersionClangOption(CVersion version) const
