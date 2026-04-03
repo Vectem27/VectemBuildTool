@@ -219,6 +219,20 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         binInfo.staticLibsToLink.emplace_back(groupPaths);
     }
 
+    for (const auto& group : sortedModules)
+    {
+        for (const auto& module : group)
+        {
+            auto staticLibs = moduleManager.ResolveModuleInfo(module).additionalStaticLib;
+            for (const auto& lib : staticLibs)
+                binInfo.staticLibsToLink.emplace_back(std::vector<fs::path>{lib});
+
+            auto staticLibDirs = moduleManager.ResolveModuleInfo(module).additionalStaticLibDir;
+            for (const auto& lib : staticLibs)
+                binInfo.libPaths.emplace_back(lib);
+        }
+    }
+
     binInfo.libPaths.emplace_back(libOutput);
 
     compiler->LinkBinary(binInfo);

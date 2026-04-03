@@ -67,6 +67,24 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
                 res.privateModuleDependencies.push_back(privateModuleDependencies[i]);
         }
 
+        sol::optional<sol::table> additionalStaticLibDirField = moduleTable["AdditionalStaticLibDirectory"];
+        if (additionalStaticLibDirField) 
+        {
+            sol::table additionalStaticLibDir = additionalStaticLibDirField.value();
+
+            for (std::size_t i = 1; i <= additionalStaticLibDir.size(); ++i)
+                res.additionalStaticLibDir.push_back(additionalStaticLibDir[i]);
+        }
+
+        sol::optional<sol::table> additionalStaticLibField = moduleTable["AdditionalStaticLib"];
+        if (additionalStaticLibField) 
+        {
+            sol::table additionalStaticLib = additionalStaticLibField.value();
+
+            for (std::size_t i = 1; i <= additionalStaticLib.size(); ++i)
+                res.additionalStaticLib.push_back(additionalStaticLib[i]);
+        }
+
         // code dir
         sol::optional<std::string> codeDirField = moduleTable["CodeDir"];
         if (!codeDirField)

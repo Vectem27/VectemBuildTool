@@ -364,6 +364,8 @@ A module rules script must define:
 - `PrivateIncludeDirectories`
 - `PublicModuleDependencies`
 - `PrivateModuleDependencies`
+- `AdditionalStaticLibDirectory` Relative to module root
+- `AdditionalStaticLib` Can be system libs
 - `CodeDir` The code directory
 
 Note:
@@ -378,6 +380,9 @@ ModuleRules = {
 
     PublicDependencies = { "Utils" },
     PrivateDependencies = { "InternalHelpers" },
+
+    AdditionalStaticLibDirectory = { "libs" },
+    AdditionalStaticLib = { "examplea" }
 
     CodeDir = "Source"
 }

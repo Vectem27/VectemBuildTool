@@ -16,4 +16,7 @@ struct ModuleInfo
 
     std::vector<std::string> publicModuleDependencies;
     std::vector<std::string> privateModuleDependencies;
+
+    std::vector<std::string> additionalStaticLib;
+    std::vector<std::filesystem::path> additionalStaticLibDir;
 };

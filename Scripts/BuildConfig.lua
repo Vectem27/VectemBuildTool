@@ -314,13 +314,16 @@ PluginRules  = function(d) return MakeUnit(d, PluginDefaultRules) end
 -- Module base
 
 local DefaultModuleRules = {
+    CodeDir = "Source",
+
     PublicIncludeDirectories = {"Public"},
     PrivateIncludeDirectories = {"Private"},
 
     PublicDependencies = {},
     PrivateDependencies = {},
 
-    CodeDir = "Source"
+    AdditionalStaticLibDirectory = {},
+    AdditionalStaticLib = {}
 }
 
 function Module(defaults)
