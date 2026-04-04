@@ -317,19 +317,20 @@ void ClangCompiler::LinkBinary(const BinaryInfo& linkInfo) const
 std::vector<std::string> ClangCompiler::CreateCompileArgs(const CompileInfo& compileInfo, unsigned int fileLanguage) const
 {
     std::vector<std::string> args;
+
+    switch (fileLanguage)
+    {
+    case LANG_C:
+        args.push_back(clangPath.string());
+        args.push_back(GetCVersionClangOption(compileInfo.cVersion));
+        break;
+    case LANG_CPP:
         args.push_back(clangCppPath.string());
-        
-        switch (fileLanguage)
-        {
-        case LANG_C:
-            args.push_back(GetCVersionClangOption(compileInfo.cVersion));
-            break;
-        case LANG_CPP:
-            args.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
-            break;
-        default:
-            throw std::runtime_error("Failed to compile file, unknown file type.");
-        }
+        args.push_back(GetCppVersionClangOption(compileInfo.cppVersion));
+        break;
+    default:
+        throw std::runtime_error("Failed to compile file, unknown file type.");
+    }
         
         // Add debug info flag
         if (compileInfo.bAddDebugInfo)

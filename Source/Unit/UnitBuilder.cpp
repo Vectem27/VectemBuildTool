@@ -96,6 +96,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
             for (const auto& p : cppFiles)
                 objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
+            for (const auto& p : cFiles)
+                objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
         }
 
         ArchiveInfo arInfo{
@@ -148,6 +150,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
         std::vector<fs::path> objectsFiles;
         for (const auto& p : cppFiles)
+            objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
+        for (const auto& p : cFiles)
             objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
 
         ArchiveInfo arInfo{
