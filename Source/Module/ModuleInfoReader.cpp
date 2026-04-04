@@ -94,7 +94,7 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
             for (std::size_t i = 1; i <= additionalmacro.size(); ++i)
             {
                 Macro macro;
-                sol::optional<sol::table> macroField = additionalmacro["AdditionalMacro"];
+                sol::optional<sol::table> macroField = additionalmacro[i];
                 if (!macroField.has_value())
                     throw ModuleInfoReaderException("AdditionalMacro sub field is not a table");
                 
@@ -105,7 +105,9 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
                     Logger::Log(LogLevel::Warning, "AdditionalMacro sub table is ignored for no name set.");
                 macro.name = macroName.value();
 
-                macro.value  = macroDef["Value"];
+                sol::optional<std::string> macroValue = macroDef["Value"];
+
+                macro.value = macroValue.has_value() ? macro.value : std::nullopt;
             }
         }
 
