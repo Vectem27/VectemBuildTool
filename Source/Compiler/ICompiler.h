@@ -5,6 +5,7 @@
 #include <list>
 
 #include "Compilation.h"
+#include "Types.h"
 
 /**
  * @brief Compilation basics information for an executable or a library
@@ -25,7 +26,7 @@ struct CompileInfo
     CompilationOptimisation optimisation = CompilationOptimisation::STANDARD;
     FloatingPointModel floatingPointModel = FloatingPointModel::PRECISE;
 
-    // TODO: Adding defines
+    std::vector<Macro> macros;
 };
 
 struct ArchiveInfo

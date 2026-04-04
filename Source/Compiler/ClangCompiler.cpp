@@ -332,14 +332,11 @@ std::vector<std::string> ClangCompiler::CreateCompileArgs(const CompileInfo& com
         throw std::runtime_error("Failed to compile file, unknown file type.");
     }
         
-        // Add debug info flag
-        if (compileInfo.bAddDebugInfo)
-            args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
-        
-        // Add optimization flag
-        //args.push_back(GetOptimisationClangOption(compileInfo.optimisation));
-        
-        switch (compileInfo.optimisation)
+    // Add debug info flag
+    if (compileInfo.bAddDebugInfo)
+        args.push_back(GetDebugInfoClangOption(compileInfo.bAddDebugInfo));
+    
+    switch (compileInfo.optimisation)
     {
         case CompilationOptimisation::MIN_SIZE:
             args.push_back("-Os");
@@ -376,6 +373,14 @@ std::vector<std::string> ClangCompiler::CreateCompileArgs(const CompileInfo& com
 
     for (const auto& include : compileInfo.includesPaths)
     args.push_back("-I" + include.string());
+
+    for (const auto& macro : compileInfo.macros)
+    {
+        if (macro.value.has_value())        
+            args.push_back("-D" + macro.name + "=" + macro.value.value());
+        else
+            args.push_back("-D" + macro.name);
+    }
 
     return args;
 }
@@ -423,25 +428,6 @@ std::string ClangCompiler::GetCppVersionClangOption(CppVersion version) const
         return opt + "c++2c";
     default:
         return opt + "c++20";
-    }
-}
-
-std::string ClangCompiler::GetOptimisationClangOption(CompilationOptimisation optimisation) const
-{
-    switch (optimisation)
-    {
-    case CompilationOptimisation::NONE:
-        return "-O0";
-    case CompilationOptimisation::STANDARD:
-        return "-O2";
-    case CompilationOptimisation::AGGRESSIVE:
-        return "-O3";
-    case CompilationOptimisation::FAST:
-        return "-O3";
-    case CompilationOptimisation::MIN_SIZE:
-        return "-Os";
-    default:
-        return "-O2";
     }
 }
 

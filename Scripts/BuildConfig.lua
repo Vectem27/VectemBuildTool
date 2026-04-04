@@ -323,7 +323,9 @@ local DefaultModuleRules = {
     PrivateDependencies = {},
 
     AdditionalStaticLibDirectory = {},
-    AdditionalStaticLib = {}
+    AdditionalStaticLib = {},
+
+    AdditionalMacro = {}
 }
 
 function Module(defaults)

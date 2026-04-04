@@ -17,7 +17,6 @@ protected:
 
     std::string GetCVersionClangOption(CVersion version) const;
     std::string GetCppVersionClangOption(CppVersion version) const;
-    std::string GetOptimisationClangOption(CompilationOptimisation optimisation) const;
     std::string GetFloatingPointClangOption(FloatingPointModel floatingPoint) const;
     std::string GetDebugInfoClangOption(bool bAddDebugInfo) const;
 };

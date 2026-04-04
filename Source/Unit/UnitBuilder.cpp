@@ -145,7 +145,13 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             .cppVersion = targetRules.cppVersion,
             .optimisation = targetRules.optimisationType,
             .floatingPointModel = targetRules.floatingPointType,
+            .macros = {} // TODO: Set target macro
         };
+
+        const auto& modAddMacro = moduleInfo.additionalMacro;
+
+        compInfo.macros.insert(compInfo.macros.end(), modAddMacro.begin(), modAddMacro.end());
+
         compiler->CompileObjects(compInfo);
 
         std::vector<fs::path> objectsFiles;

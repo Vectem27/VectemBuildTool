@@ -9,7 +9,8 @@
 - [ ] Add flags into the build command
 - [ ] Inject the platform var into scripts
 - [ ] Add compilation flag into the target
-- [X] Add precompiled modules (With lib or dll and include dir)
+- [x] Add precompiled modules (With lib or dll and include dir)
+- [ ] Add file ignore (Especialy for platform management)
 
 ## Sub unit compilation
 

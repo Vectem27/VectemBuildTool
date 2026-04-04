@@ -1,5 +1,6 @@
 #include "ModuleInfoReader.h"
 
+#include "Core/Logger.hpp"
 #include "IModuleInfoReader.h"
 #include "Module/Module.h"
 
@@ -85,6 +86,31 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
                 res.additionalStaticLib.push_back(additionalStaticLib[i]);
         }
 
+        sol::optional<sol::table> additionalMacroField = moduleTable["AdditionalMacro"];
+        if (additionalMacroField) 
+        {
+            sol::table additionalmacro = additionalMacroField.value();
+
+            for (std::size_t i = 1; i <= additionalmacro.size(); ++i)
+            {
+                Macro macro;
+                sol::optional<sol::table> macroField = additionalmacro["AdditionalMacro"];
+                if (!macroField.has_value())
+                    throw ModuleInfoReaderException("AdditionalMacro sub field is not a table");
+                
+                auto macroDef = macroField.value();
+
+                sol::optional<std::string> macroName = macroDef["Name"];
+                if (!macroName.has_value())
+                    Logger::Log(LogLevel::Warning, "AdditionalMacro sub table is ignored for no name set.");
+                macro.name = macroName.value();
+
+                macro.value  = macroDef["Value"];
+            }
+        }
+
+
+        
         // code dir
         sol::optional<std::string> codeDirField = moduleTable["CodeDir"];
         if (!codeDirField)

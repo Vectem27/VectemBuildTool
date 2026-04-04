@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
 #include <vector>
 #include <filesystem>
 
+#include "Types.h"
 struct ModuleInfo
 {
     std::string name;
@@ -19,4 +19,6 @@ struct ModuleInfo
 
     std::vector<std::string> additionalStaticLib;
     std::vector<std::filesystem::path> additionalStaticLibDir;
+
+    std::vector<Macro> additionalMacro;
 };
