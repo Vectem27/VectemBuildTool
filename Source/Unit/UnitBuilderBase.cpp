@@ -120,10 +120,7 @@ void UnitBuilderBase::ReadModulesrules(const BuildData& buildData, const UnitCon
             .buildRulesFile = moduleRulesFile,
         };
 
-        sol::state moduleLua;
-        moduleLua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine,
-                                 sol::lib::io);
-        moduleLua.safe_script_file(buildData.configurationFile.string());
+        sol::state moduleLua = NewBuilderLuaState();
         moduleLua.safe_script_file(unitRulesFile.string());
         moduleLua.safe_script_file(moduleRulesFile);
 
@@ -142,7 +139,10 @@ std::string UnitBuilderBase::ResolveMacro(const std::string& str, const std::str
 sol::state UnitBuilderBase::NewBuilderLuaState() const
 {
     sol::state unitLua;
-    unitLua.open_libraries(sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, sol::lib::coroutine, sol::lib::io);
+    unitLua.open_libraries(
+        sol::lib::base, sol::lib::table, sol::lib::math, sol::lib::string, 
+        sol::lib::coroutine, sol::lib::io, sol::lib::os, sol::lib::debug
+    );
     unitLua.safe_script_file(buildConfigFile.string());
     return unitLua;
 }
