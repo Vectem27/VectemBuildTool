@@ -143,6 +143,8 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     std::vector<std::string> moduleList;
 
+    bool skipLinking = true;
+
     for (const auto& moduleRules : unitRules.modules)
     {
         moduleList.push_back(moduleRules.name);
@@ -201,11 +203,19 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                 .objects = objectsFiles
             };
             compiler->ArchiveObjects(arInfo);
+
+            skipLinking = false;
         }
         else
         {
             Logger::Log(LogLevel::Debug, "Skipping archive for module '%s': no object file changed.", moduleRules.name.c_str());
         }
+    }
+
+    if (skipLinking)
+    {
+        Logger::Log(LogLevel::Debug, "Skipping link edition for unit '%s': no module changed.", buildData.unitName.c_str());
+        return;
     }
 
     BinaryInfo binInfo = {
