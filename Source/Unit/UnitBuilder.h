@@ -18,6 +18,7 @@ protected:
     {
         std::string unitName;
         UnitCompilationType compilationType;
+        std::filesystem::path buildOutputDir;
         std::filesystem::path libDir;
         std::filesystem::path binDir;
         std::vector<std::string> moduleNames;

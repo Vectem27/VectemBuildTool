@@ -8,6 +8,7 @@
 
 #include "BuildConfig/BuildConfigReader.h"
 #include "Compiler/CompileCommandsExporter.h"
+#include "Compiler/CompileFileChangeManager.h"
 #include "Core/Logger.hpp"
 #include "Compiler/ClangCompiler.h"
 #include "Unit/UnitBuilder.h"
@@ -290,7 +291,9 @@ int main(int argc, char* argv[])
     {
         Logger::Log(LogLevel::Info, "Starting build for unit '%s' (%s, target %s)", unitName.c_str(), unitType.c_str(), buildTarget.c_str());
 
-        ClangCompilerFactory compilerFactory = ClangCompilerFactory();
+        std::shared_ptr<CompileFileChangeManager> fileChangeManager = std::make_shared<CompileFileChangeManager>();
+
+        ClangCompilerFactory compilerFactory = ClangCompilerFactory(fileChangeManager);
         ModuleIncludeSolver modIncSolver = ModuleIncludeSolver();
         ModuleGraphDependencySorter modDepSorter = ModuleGraphDependencySorter();
         ModuleManager moduleManager = ModuleManager();

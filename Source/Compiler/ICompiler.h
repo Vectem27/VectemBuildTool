@@ -15,6 +15,10 @@ struct CompileInfo
     std::filesystem::path buildOutputPath;
     std::filesystem::path objectOutputPath;
 
+    // Additional build outputs whose change caches must also be checked
+    // (for dependency units and sub-builds).
+    std::vector<std::filesystem::path> dependencyBuildOutputs;
+
     std::vector<std::filesystem::path> cppFilesToCompile;
     std::vector<std::filesystem::path> cFilesToCompile;
     std::vector<std::filesystem::path> includesPaths;
@@ -65,8 +69,9 @@ public:
      * @brief Compiles objects with the given compilation information.
      *
      * @param compileInfo The compilation information for the library to compile.
+     * @return true if no object file needed recompilation, false otherwise.
      */
-    virtual void CompileObjects(const CompileInfo& compileInfo) const = 0;
+    virtual bool CompileObjects(const CompileInfo& compileInfo) const = 0;
 
     /**
      * @brief Archive objects into a single library.

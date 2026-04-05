@@ -2,6 +2,7 @@
 #include "UnitBuilder.h"
 
 #include <filesystem>
+#include <memory>
 
 #include <sol/sol.hpp>
 #include <vector>
@@ -47,16 +48,36 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     auto objectOutput = GetObjectOutputDir(buildData);
     auto binOutput = GetBinaryOutputDir(buildData);
 
+    std::vector<fs::path> dependencyBuildOutputs;
+    dependencyBuildOutputs.reserve(dependanciesData.size());
+    for (const auto& dependencyData : dependanciesData)
+    {
+        if (!dependencyData.buildOutputDir.empty())
+            dependencyBuildOutputs.emplace_back(dependencyData.buildOutputDir);
+    }
+
     fs::create_directories(buildOutput);
+
+    auto getArchivePath = [](const fs::path& libDir, const std::string& outputName)
+    {
+        fs::path archivePath = libDir / ("lib" + outputName);
+#ifdef _WIN32
+        archivePath.replace_extension(".lib");
+#else
+        archivePath.replace_extension(".a");
+#endif
+        return archivePath;
+    };
 
     // Start compilation
 
-    ICompiler* compiler = compilerFactory.Create();
+    std::unique_ptr<ICompiler> compiler(compilerFactory.Create());
     
 
     if (unitRules.compilationType == UnitCompilationType::StaticLibrary)
     {
         std::vector<fs::path> objectsFiles;
+        bool shouldArchiveUnit = !fs::exists(getArchivePath(libOutput, buildData.unitName));
 
         for (const auto& moduleRules : unitRules.modules)
         {
@@ -83,6 +104,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             CompileInfo compInfo = {
                 .buildOutputPath = buildOutput,
                 .objectOutputPath = objectOutput,
+                .dependencyBuildOutputs = dependencyBuildOutputs,
                 .cppFilesToCompile = cppFiles,
                 .cFilesToCompile = cFiles,
                 .includesPaths = includes,
@@ -92,7 +114,9 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                 .optimisation = targetRules.optimisationType,
                 .floatingPointModel = targetRules.floatingPointType,
             };
-            compiler->CompileObjects(compInfo);
+            const bool bObjectsUnchanged = compiler->CompileObjects(compInfo);
+            if (!bObjectsUnchanged)
+                shouldArchiveUnit = true;
 
             for (const auto& p : cppFiles)
                 objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
@@ -100,12 +124,19 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                 objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
         }
 
-        ArchiveInfo arInfo{
-            .outputName = buildData.unitName,
-            .libOututPath = GetStaticLibOutputDir(buildData),
-            .objects = objectsFiles
-        };
-        compiler->ArchiveObjects(arInfo);
+        if (shouldArchiveUnit)
+        {
+            ArchiveInfo arInfo{
+                .outputName = buildData.unitName,
+                .libOututPath = GetStaticLibOutputDir(buildData),
+                .objects = objectsFiles
+            };
+            compiler->ArchiveObjects(arInfo);
+        }
+        else
+        {
+            Logger::Log(LogLevel::Debug, "Skipping archive for unit '%s': no object file changed.", buildData.unitName.c_str());
+        }
 
         return;
     }
@@ -137,6 +168,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         CompileInfo compInfo = {
             .buildOutputPath = buildOutput,
             .objectOutputPath = objectOutput,
+            .dependencyBuildOutputs = dependencyBuildOutputs,
             .cppFilesToCompile = cppFiles,
             .cFilesToCompile = cFiles,
             .includesPaths = includes,
@@ -152,7 +184,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
         compInfo.macros.insert(compInfo.macros.end(), modAddMacro.begin(), modAddMacro.end());
 
-        compiler->CompileObjects(compInfo);
+        const bool bObjectsUnchanged = compiler->CompileObjects(compInfo);
 
         std::vector<fs::path> objectsFiles;
         for (const auto& p : cppFiles)
@@ -160,12 +192,20 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         for (const auto& p : cFiles)
             objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
 
-        ArchiveInfo arInfo{
-            .outputName = moduleRules.name,
-            .libOututPath = GetStaticLibOutputDir(buildData),
-            .objects = objectsFiles
-        };
-        compiler->ArchiveObjects(arInfo);
+        const fs::path moduleArchivePath = getArchivePath(libOutput, moduleRules.name);
+        if (!bObjectsUnchanged || !fs::exists(moduleArchivePath))
+        {
+            ArchiveInfo arInfo{
+                .outputName = moduleRules.name,
+                .libOututPath = GetStaticLibOutputDir(buildData),
+                .objects = objectsFiles
+            };
+            compiler->ArchiveObjects(arInfo);
+        }
+        else
+        {
+            Logger::Log(LogLevel::Debug, "Skipping archive for module '%s': no object file changed.", moduleRules.name.c_str());
+        }
     }
 
     BinaryInfo binInfo = {
@@ -254,8 +294,6 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     binInfo.libPaths.emplace_back(libOutput);
 
     compiler->LinkBinary(binInfo);
-    
-    delete compiler;
 }
 
 UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(const ProjectDependancy& dependancy, const BuildData& buildData) 
@@ -276,6 +314,7 @@ UnitBuilder::DependancyProcessingResult UnitBuilder::ProcessDependancyProject(co
     };
 
     res.unitName = dependancyBuildData.unitName;
+    res.buildOutputDir = GetBuildOutputDir(dependancyBuildData);
     res.binDir = GetBinaryOutputDir(dependancyBuildData);
     res.libDir = GetStaticLibOutputDir(dependancyBuildData);
 

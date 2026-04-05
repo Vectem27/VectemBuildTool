@@ -4,6 +4,39 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <unordered_set>
+
+CompileFileChangeManager::fs_path CompileFileChangeManager::GetCacheFilePath(const fs_path& buildOutputPath) const
+{
+    return std::filesystem::absolute(buildOutputPath) / "compile_changes.cache";
+}
+
+std::vector<CompileFileChangeManager::fs_path> CompileFileChangeManager::GetCacheFiles(
+    const fs_path& buildOutputPath,
+    const std::vector<fs_path>& dependencyBuildOutputs) const
+{
+    std::vector<fs_path> cacheFiles;
+    std::unordered_set<std::string> seenPaths;
+
+    auto addCacheFile = [&](const fs_path& outputPath)
+    {
+        if (outputPath.empty())
+            return;
+
+        const fs_path cacheFilePath = GetCacheFilePath(outputPath);
+        const std::string cacheKey = cacheFilePath.lexically_normal().string();
+
+        if (seenPaths.insert(cacheKey).second)
+            cacheFiles.push_back(cacheFilePath);
+    };
+
+    addCacheFile(buildOutputPath);
+
+    for (const auto& dependencyBuildOutput : dependencyBuildOutputs)
+        addCacheFile(dependencyBuildOutput);
+
+    return cacheFiles;
+}
 
 bool CompileFileChangeManager::NeedsRebuild(const std::string& fileId, const std::vector<std::string>& dependencyFileIds,
                                             const std::vector<fs_path>& cacheFiles) const
@@ -51,6 +84,9 @@ bool CompileFileChangeManager::NeedsRebuild(const std::string& fileId, const std
 
 void CompileFileChangeManager::CacheFile(const std::string& fileId, const fs_path& file, const fs_path& cacheFilePath)
 {
+    if (!cacheFilePath.parent_path().empty())
+        std::filesystem::create_directories(cacheFilePath.parent_path());
+
     // Load existing cache entries (simple key->line map)
     std::unordered_map<std::string, std::string> entries;
     if (std::filesystem::exists(cacheFilePath))

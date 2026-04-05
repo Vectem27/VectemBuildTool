@@ -2,9 +2,12 @@
 
 #include <filesystem>
 #include <cstdlib>
-#include <stdexcept>
-#include <vector>
+#include <fstream>
+#include <regex>
 #include <sstream>
+#include <stdexcept>
+#include <unordered_set>
+#include <vector>
 
 #include "Compiler/Compilation.h"
 #include "Compiler/CompileCommandsExporter.h"
@@ -47,6 +50,101 @@ enum FileLanguage : unsigned int
     LANG_C,
     LANG_CPP
 };
+
+namespace
+{
+    std::string MakeFileId(const fs::path& file)
+    {
+        return file.filename();
+        //try
+        //{
+        //    return fs::weakly_canonical(file).lexically_normal().string();
+        //}
+        //catch (const fs::filesystem_error&)
+        //{
+        //    return fs::absolute(file).lexically_normal().string();
+        //}
+    }
+
+    fs::path ResolveIncludePath(const std::string& includeName, const fs::path& sourceDir,
+                                const std::vector<fs::path>& includePaths)
+    {
+        std::vector<fs::path> searchRoots;
+        searchRoots.reserve(includePaths.size() + 1);
+        searchRoots.push_back(sourceDir);
+        searchRoots.insert(searchRoots.end(), includePaths.begin(), includePaths.end());
+
+        for (const auto& root : searchRoots)
+        {
+            fs::path candidate = root / includeName;
+            if (!fs::exists(candidate) || !fs::is_regular_file(candidate))
+                continue;
+
+            try
+            {
+                return fs::weakly_canonical(candidate);
+            }
+            catch (const fs::filesystem_error&)
+            {
+                return fs::absolute(candidate);
+            }
+        }
+
+        return {};
+    }
+
+    void CollectFileDependenciesRecursive(const fs::path& file,
+                                          const std::vector<fs::path>& includePaths,
+                                          std::unordered_set<std::string>& visitedFiles,
+                                          std::vector<fs::path>& dependencies)
+    {
+        std::ifstream input(file);
+        if (!input)
+            return;
+
+        static const std::regex includePattern(R"(^\s*#\s*include\s*[<"]([^">]+)[">])");
+        std::string line;
+        while (std::getline(input, line))
+        {
+            std::smatch match;
+            if (!std::regex_search(line, match, includePattern))
+                continue;
+
+            fs::path dependency = ResolveIncludePath(match[1].str(), file.parent_path(), includePaths);
+            if (dependency.empty())
+                continue;
+
+            const std::string dependencyId = MakeFileId(dependency);
+            if (!visitedFiles.insert(dependencyId).second)
+                continue;
+
+            dependencies.push_back(dependency);
+            CollectFileDependenciesRecursive(dependency, includePaths, visitedFiles, dependencies);
+        }
+    }
+
+    std::vector<fs::path> CollectFileDependencies(const fs::path& sourceFile,
+                                                  const std::vector<fs::path>& includePaths)
+    {
+        std::unordered_set<std::string> visitedFiles;
+        visitedFiles.insert(MakeFileId(sourceFile));
+
+        std::vector<fs::path> dependencies;
+        CollectFileDependenciesRecursive(sourceFile, includePaths, visitedFiles, dependencies);
+        return dependencies;
+    }
+
+    std::vector<std::string> BuildDependencyIds(const std::vector<fs::path>& dependencies)
+    {
+        std::vector<std::string> dependencyIds;
+        dependencyIds.reserve(dependencies.size());
+
+        for (const auto& dependency : dependencies)
+            dependencyIds.push_back(MakeFileId(dependency));
+
+        return dependencyIds;
+    }
+}
 
 static void ExecuteCommand(const fs::path& exePath, const std::vector<std::string>& argStrings)
 {
@@ -119,25 +217,21 @@ static void ExecuteCommand(const fs::path& exePath, const std::vector<std::strin
 #endif
 }
 
-void ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
+bool ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
 {
-    fs::path objDir = compileInfo.objectOutputPath;
+    const fs::path objDir = compileInfo.objectOutputPath;
+    fs::create_directories(objDir);
+    fs::create_directories(compileInfo.buildOutputPath);
 
-    if (fs::exists(objDir) && fs::is_directory(objDir))
-    {
-        // TODO: Manage file changements
-        // Remove averything from the obj dir.
-        for (const auto& entry : fs::directory_iterator(objDir))
-            fs::remove_all(entry.path());
-    }
-    else
-        fs::create_directories(objDir);
+    const std::vector<fs::path> cacheFiles = fileChangeManager
+        ? fileChangeManager->GetCacheFiles(compileInfo.buildOutputPath, compileInfo.dependencyBuildOutputs)
+        : std::vector<fs::path>{};
 
-    std::vector<fs::path> objects;
-    
-    for (const auto& file : compileInfo.cFilesToCompile)
+    bool bNothingChanged = true;
+
+    auto compileSingleFile = [&](const fs::path& file, unsigned int language, const fs::path& compilerPath)
     {
-        auto args = CreateCompileArgs(compileInfo, LANG_C);
+        auto args = CreateCompileArgs(compileInfo, language);
 
         args.push_back("-c");
         args.push_back(file.string());
@@ -148,28 +242,50 @@ void ClangCompiler::CompileObjects(const CompileInfo& compileInfo) const
         args.push_back("-o");
         args.push_back(objFile.string());
 
-        objects.push_back(objFile);
         CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
-        ExecuteCommand(clangPath, args);
-    }
+
+        bool needsRebuild = !fs::exists(objFile);
+        std::vector<fs::path> dependencyFiles;
+
+        if (fileChangeManager)
+        {
+            dependencyFiles = CollectFileDependencies(file, compileInfo.includesPaths);
+
+            if (!needsRebuild)
+            {
+                needsRebuild = fileChangeManager->NeedsRebuild(
+                    MakeFileId(file),
+                    BuildDependencyIds(dependencyFiles),
+                    cacheFiles);
+            }
+        }
+
+        if (!needsRebuild)
+        {
+            Logger::Log(LogLevel::Debug, "Skipping unchanged file: %s", file.string().c_str());
+            return;
+        }
+
+        bNothingChanged = false;
+        ExecuteCommand(compilerPath, args);
+
+        if (fileChangeManager)
+        {
+            const fs::path cacheFilePath = fileChangeManager->GetCacheFilePath(compileInfo.buildOutputPath);
+            fileChangeManager->CacheFile(MakeFileId(file), file, cacheFilePath);
+
+            for (const auto& dependency : dependencyFiles)
+                fileChangeManager->CacheFile(MakeFileId(dependency), dependency, cacheFilePath);
+        }
+    };
+
+    for (const auto& file : compileInfo.cFilesToCompile)
+        compileSingleFile(file, LANG_C, clangPath);
 
     for (const auto& file : compileInfo.cppFilesToCompile)
-    {
-        auto args = CreateCompileArgs(compileInfo, LANG_CPP);
+        compileSingleFile(file, LANG_CPP, clangCppPath);
 
-        args.push_back("-c");
-        args.push_back(file.string());
-
-        fs::path objFile = objDir / file.filename();
-        objFile.replace_extension(objExt);
-
-        args.push_back("-o");
-        args.push_back(objFile.string());
-
-        objects.push_back(objFile);
-        CompileCommandsExporter::Append(compileInfo.buildOutputPath, fs::current_path(), file, args);
-        ExecuteCommand(clangCppPath, args);
-    }
+    return bNothingChanged;
 }
 
 void ClangCompiler::ArchiveObjects(const ArchiveInfo& archiveInfo) const
