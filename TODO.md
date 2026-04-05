@@ -11,6 +11,7 @@
 - [ ] Add compilation flag into the target
 - [x] Add precompiled modules (With lib or dll and include dir)
 - [ ] Add file ignore (Especialy for platform management)
+- [ ] Let compile a module as a system module
 
 ## Sub unit compilation
 

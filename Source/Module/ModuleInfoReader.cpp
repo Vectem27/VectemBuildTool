@@ -107,7 +107,7 @@ ModuleInfo ModuleInfoReader::ReadInfo(const std::string& moduleName, const std::
 
                 sol::optional<std::string> macroValue = macroDef["Value"];
 
-                macro.value = macroValue.has_value() ? macro.value : std::nullopt;
+                macro.value = macroValue.has_value() ? std::optional<std::string>(macroValue.value()) : std::nullopt;
 
                 res.additionalMacro.push_back(macro);
             }
