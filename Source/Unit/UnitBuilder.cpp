@@ -58,7 +58,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     fs::create_directories(buildOutput);
 
-    auto getArchivePath = [](const fs::path& libDir, const std::string& outputName)
+    auto GetArchivePath = [](const fs::path& libDir, const std::string& outputName)
     {
         fs::path archivePath = libDir / ("lib" + outputName);
 #ifdef _WIN32
@@ -69,6 +69,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         return archivePath;
     };
 
+
     // Start compilation
 
     std::unique_ptr<ICompiler> compiler(compilerFactory.Create());
@@ -77,7 +78,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
     if (unitRules.compilationType == UnitCompilationType::StaticLibrary)
     {
         std::vector<fs::path> objectsFiles;
-        bool shouldArchiveUnit = !fs::exists(getArchivePath(libOutput, buildData.unitName));
+        bool shouldArchiveUnit = !fs::exists(GetArchivePath(libOutput, buildData.unitName));
 
         for (const auto& moduleRules : unitRules.modules)
         {
@@ -115,13 +116,9 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
                 .floatingPointModel = targetRules.floatingPointType,
             };
             const bool bObjectsUnchanged = compiler->CompileObjects(compInfo);
+
             if (!bObjectsUnchanged)
                 shouldArchiveUnit = true;
-
-            for (const auto& p : cppFiles)
-                objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
-            for (const auto& p : cFiles)
-                objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
         }
 
         if (shouldArchiveUnit)
@@ -143,7 +140,16 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
 
     std::vector<std::string> moduleList;
 
-    bool skipLinking = true;
+
+    fs::path binaryPath = GetBinaryOutputDir(buildData) / (unitRules.compilationType == UnitCompilationType::DynamicLibrary ? "lib" + buildData.unitName : buildData.unitName);
+#ifdef _WIN32
+
+    binaryPath.replace_extension(unitRules.compilationType == UnitCompilationType::DynamicLibrary ? ".dll" : ".exe");
+#else
+    binaryPath.replace_extension(unitRules.compilationType == UnitCompilationType::DynamicLibrary ? ".so" : "");
+#endif
+
+    bool linkUnit = !fs::exists(binaryPath) && !fs::is_regular_file(binaryPath);
 
     for (const auto& moduleRules : unitRules.modules)
     {
@@ -194,7 +200,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         for (const auto& p : cFiles)
             objectsFiles.emplace_back(objectOutput / p.filename().replace_extension(".o"));
 
-        const fs::path moduleArchivePath = getArchivePath(libOutput, moduleRules.name);
+        const fs::path moduleArchivePath = GetArchivePath(libOutput, moduleRules.name);
         if (!bObjectsUnchanged || !fs::exists(moduleArchivePath))
         {
             ArchiveInfo arInfo{
@@ -204,7 +210,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
             };
             compiler->ArchiveObjects(arInfo);
 
-            skipLinking = false;
+            linkUnit = true;
         }
         else
         {
@@ -212,7 +218,7 @@ void UnitBuilder::BuildUnit(const BuildData& buildData)
         }
     }
 
-    if (skipLinking)
+    if (!linkUnit)
     {
         Logger::Log(LogLevel::Debug, "Skipping link edition for unit '%s': no module changed.", buildData.unitName.c_str());
         return;
